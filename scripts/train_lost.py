@@ -41,6 +41,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--vel-bins", type=int, default=20)
     parser.add_argument("--n-actions", type=int, default=10)
     parser.add_argument("--n-planning", type=int, default=10, help="Solo para Dyna-Q")
+    parser.add_argument("--q-init", type=float, default=0.0, help="Inicialización optimista de Q (>0 = optimista)")
     parser.add_argument("--eval-episodes", type=int, default=20)
     parser.add_argument("--save-path", type=str, default=None)
     return parser.parse_args()
@@ -56,6 +57,7 @@ def main() -> None:
             n_pos_bins=args.pos_bins,
             n_vel_bins=args.vel_bins,
             n_actions=args.n_actions,
+            q_init=args.q_init,
         )
         print(f"Agente: Q-Learning | {agent.disc}")
     else:
@@ -64,6 +66,7 @@ def main() -> None:
             n_vel_bins=args.vel_bins,
             n_actions=args.n_actions,
             n_planning_steps=args.n_planning,
+            q_init=args.q_init,
         )
         print(f"Agente: Dyna-Q (n_planning={args.n_planning}) | {agent.disc}")
 

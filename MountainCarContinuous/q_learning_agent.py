@@ -45,6 +45,7 @@ class QLearningAgent:
         n_pos_bins: int = 20,
         n_vel_bins: int = 20,
         n_actions: int = 10,
+        q_init: float = 0.0,
     ) -> None:
         self.disc = Discretizer(
             n_pos_bins=n_pos_bins,
@@ -52,8 +53,9 @@ class QLearningAgent:
             n_actions=n_actions,
         )
 
-        # Tabla Q inicializada en cero — forma: (pos+1, vel+1, n_actions)
-        self.Q = np.zeros((*self.disc.state_shape, self.disc.n_actions))
+        self.q_init = q_init
+        # Tabla Q — q_init>0 aplica inicialización optimista (favorece exploración)
+        self.Q = np.full((*self.disc.state_shape, self.disc.n_actions), q_init)
 
         # Hiperparámetros — se setean en train_agent
         self.alpha: float = 0.1
@@ -128,9 +130,9 @@ class QLearningAgent:
         self,
         env: gym.Env,
         episodes: int = 1000,
-        epsilon: float = 0.9,
-        gamma: float = 0.9,
-        alpha: float = 0.99,
+        epsilon: float = 1.0,
+        gamma: float = 0.99,
+        alpha: float = 0.1,
         epsilon_decay: float = 0.995,
         epsilon_min: float = 0.01,
         max_steps: int = 999,
@@ -277,6 +279,8 @@ class QLearningAgent:
                     "alpha": self.alpha,
                     "gamma": self.gamma,
                     "epsilon": self.epsilon,
+                    "training_rewards": self.training_rewards,
+                    "q_init": self.q_init,
                 },
                 f,
             )
@@ -297,5 +301,7 @@ class QLearningAgent:
         agent.alpha = data["alpha"]
         agent.gamma = data["gamma"]
         agent.epsilon = data["epsilon"]
+        agent.training_rewards = data.get("training_rewards", [])
+        agent.q_init = data.get("q_init", 0.0)
         print(f"Modelo cargado desde: {path}")
         return agent

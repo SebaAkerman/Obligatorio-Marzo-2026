@@ -51,6 +51,7 @@ class DynaQAgent:
         n_vel_bins: int = 20,
         n_actions: int = 10,
         n_planning_steps: int = 10,
+        q_init: float = 0.0,
     ) -> None:
         self.disc = Discretizer(
             n_pos_bins=n_pos_bins,
@@ -58,15 +59,17 @@ class DynaQAgent:
             n_actions=n_actions,
         )
         self.n_planning = n_planning_steps
+        self.q_init = q_init
 
-        # Tabla Q inicializada en cero
-        self.Q = np.zeros((*self.disc.state_shape, self.disc.n_actions))
+        # Tabla Q — q_init>0 aplica inicialización optimista (favorece exploración)
+        self.Q = np.full((*self.disc.state_shape, self.disc.n_actions), q_init)
 
         # Modelo del ambiente: (estado, acción) → (reward, siguiente_estado, done)
         self.model: dict[tuple, tuple] = {}
 
         # Registro de pares (s, a) visitados para samplear en planificación
         self._visited: list[tuple] = []
+        self._visited_set: set[tuple] = set()  # O(1) membership check
 
         # Hiperparámetros — se setean en train_agent
         self.alpha: float = 0.1
@@ -142,7 +145,8 @@ class DynaQAgent:
 
         # 2. Actualizar modelo
         self.model[(state, action_idx)] = (reward, next_state, done)
-        if (state, action_idx) not in self._visited:
+        if (state, action_idx) not in self._visited_set:
+            self._visited_set.add((state, action_idx))
             self._visited.append((state, action_idx))
 
         # 3. n pasos de planificación simulada
@@ -161,9 +165,9 @@ class DynaQAgent:
         self,
         env: gym.Env,
         episodes: int = 1000,
-        epsilon: float = 0.9,
-        gamma: float = 0.9,
-        alpha: float = 0.99,
+        epsilon: float = 1.0,
+        gamma: float = 0.99,
+        alpha: float = 0.1,
         epsilon_decay: float = 0.995,
         epsilon_min: float = 0.01,
         max_steps: int = 999,
@@ -295,6 +299,10 @@ class DynaQAgent:
                     "gamma": self.gamma,
                     "n_planning": self.n_planning,
                     "epsilon": self.epsilon,
+                    "visited": self._visited,
+                    "visited_set": self._visited_set,
+                    "training_rewards": self.training_rewards,
+                    "q_init": self.q_init,
                 },
                 f,
             )
@@ -317,5 +325,9 @@ class DynaQAgent:
         agent.alpha = data["alpha"]
         agent.gamma = data["gamma"]
         agent.epsilon = data["epsilon"]
+        agent._visited = data.get("visited", list(data.get("visited_set", set())))
+        agent._visited_set = data.get("visited_set", set(agent._visited))
+        agent.training_rewards = data.get("training_rewards", [])
+        agent.q_init = data.get("q_init", 0.0)
         print(f"Modelo Dyna-Q cargado desde: {path}")
         return agent

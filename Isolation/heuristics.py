@@ -39,16 +39,19 @@ def h_mobility(board: Board, player: int) -> float:
 
 def h_open_cells(board: Board, player: int) -> float:
     """
-    Número de celdas vacías en la región accesible del jugador.
-    
-    Aproximación simple: celdas libres en todo el tablero.
-    Más celdas libres = más espacio para maniobrar.
+    Diferencia de acciones disponibles (ancho del espacio de acción).
+
+    Razonamiento: más acciones disponibles = más libertad táctica.
+    A diferencia de h_mobility (movimientos posibles), esto cuenta
+    combinaciones (dirección × celda_a_destruir), más granular.
     """
-    import numpy as np
-    empty_count = int(np.sum(board.grid == 0))
-    # Normalizado respecto al tamaño del tablero
-    total_cells = board.board_size[0] * board.board_size[1]
-    return float(empty_count / total_cells)
+    opponent = player % 2 + 1
+    my_actions = len(board.get_possible_actions(player))
+    opp_actions = len(board.get_possible_actions(opponent))
+    total = my_actions + opp_actions
+    if total == 0:
+        return 0.0
+    return float((my_actions - opp_actions) / total)
 
 
 def h_center_proximity(board: Board, player: int) -> float:
