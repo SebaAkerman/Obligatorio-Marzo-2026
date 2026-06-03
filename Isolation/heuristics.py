@@ -134,6 +134,44 @@ def eval_full(
     return w_mobility * mob + w_center * cen + w_space * space
 
 
+def h_future_mobility(board: Board, player: int) -> float:
+    """
+    Movilidad futura esperada: promedio de movimientos disponibles
+    tras cada posible acción propia, menos el promedio del oponente.
+
+    Más informativa que h_mobility porque mira un paso adelante,
+    pero ~20x más cara de calcular (usa clone+play para cada acción).
+    """
+    opponent = player % 2 + 1
+
+    my_actions = board.get_possible_actions(player)
+    if not my_actions:
+        return float(-1e9)
+    my_future = 0.0
+    for action in my_actions:
+        child = board.clone()
+        child.play(action, player)
+        my_future += len(child.get_possible_actions(player))
+    my_future /= len(my_actions)
+
+    opp_actions = board.get_possible_actions(opponent)
+    if not opp_actions:
+        return float(1e9)
+    opp_future = 0.0
+    for action in opp_actions:
+        child = board.clone()
+        child.play(action, opponent)
+        opp_future += len(child.get_possible_actions(opponent))
+    opp_future /= len(opp_actions)
+
+    return float(my_future - opp_future)
+
+
+def eval_future_mobility_only(board: Board, player: int) -> float:
+    """Evalúa únicamente por movilidad futura esperada."""
+    return h_future_mobility(board, player)
+
+
 # ---------------------------------------------------------------------------
 # Catálogo de funciones de evaluación para experimentación
 # ---------------------------------------------------------------------------
@@ -142,4 +180,5 @@ HEURISTICS = {
     "mobility_only": eval_mobility_only,
     "mobility_center": eval_mobility_center,
     "full": eval_full,
+    "future_mobility": eval_future_mobility_only,
 }
