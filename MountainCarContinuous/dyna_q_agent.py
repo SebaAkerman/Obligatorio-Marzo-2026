@@ -1,14 +1,21 @@
 """
-Agente Q-Learning tabular para MountainCarContinuous-v0.
+Agente Dyna-Q para MountainCarContinuous-v0.
 
-Referencia: Russell & Norvig — cap. 22 (Reinforcement Learning)
-            Sutton & Barto  — cap. 6.5 (Q-learning: Off-policy TD Control)
-            QL.pdf (Yovine, ORT Uruguay)
+Referencia: Sutton & Barto — Reinforcement Learning: An Introduction
+            Capítulos 8.1 y 8.2 (Dyna: Integrated Planning, Acting, and Learning)
 
-Regla de actualización:
-    Q(s, a) ← Q(s, a) + α · [r + γ · max_a' Q(s', a') − Q(s, a)]
+Dyna-Q extiende Q-Learning integrando planificación, actuación y aprendizaje:
 
-Exploración: política ε-greedy. ε puede decaer a lo largo del entrenamiento.
+    Por cada paso real (s, a, r, s'):
+        1. Actualizar Q con la experiencia real  ← igual que Q-Learning
+        2. Actualizar el modelo: Model(s, a) ← (r, s')
+        3. Repetir n veces (planificación simulada):
+            - Samplear (s̃, ã) visitado anteriormente
+            - Obtener (r̃, s̃') del modelo
+            - Actualizar Q con esa experiencia simulada
+
+Esto permite aprender más rápido reutilizando experiencias pasadas.
+Con n=0 Dyna-Q se reduce a Q-Learning puro.
 """
 
 import pickle
@@ -17,18 +24,14 @@ from pathlib import Path
 
 import numpy as np
 import gymnasium as gym
-import matplotlib.pyplot as plt
 
 from utils.discretization import Discretizer
 
 
-class QLearningAgent:
+class DynaQAgent:
     """
-    Agente Q-Learning tabular con política ε-greedy.
-
-    El Discretizer se construye internamente a partir de los parámetros
-    de bins y acciones, permitiendo explorar distintas granularidades
-    como pide el obligatorio.
+    Agente Dyna-Q tabular. Sigue la misma interfaz que QLearningAgent
+    (train_agent / test_agent / next_action) para facilitar la comparación.
 
     Parámetros de __init__
     ----------------------
@@ -38,6 +41,8 @@ class QLearningAgent:
         Número de bins para discretizar la velocidad.
     n_actions : int
         Número de acciones discretas uniformes en [-1, 1].
+    n_planning_steps : int
+        Pasos de planificación simulada por cada paso real (n en Dyna-Q).
     """
 
     def __init__(
@@ -45,36 +50,39 @@ class QLearningAgent:
         n_pos_bins: int = 20,
         n_vel_bins: int = 20,
         n_actions: int = 10,
+        n_planning_steps: int = 10,
     ) -> None:
         self.disc = Discretizer(
             n_pos_bins=n_pos_bins,
             n_vel_bins=n_vel_bins,
             n_actions=n_actions,
         )
+        self.n_planning = n_planning_steps
 
-        # Tabla Q inicializada en cero — forma: (pos+1, vel+1, n_actions)
+        # Tabla Q inicializada en cero
         self.Q = np.zeros((*self.disc.state_shape, self.disc.n_actions))
+
+        # Modelo del ambiente: (estado, acción) → (reward, siguiente_estado, done)
+        self.model: dict[tuple, tuple] = {}
+
+        # Registro de pares (s, a) visitados para samplear en planificación
+        self._visited: list[tuple] = []
 
         # Hiperparámetros — se setean en train_agent
         self.alpha: float = 0.1
         self.gamma: float = 0.99
         self.epsilon: float = 1.0
 
-        # Historial de entrenamiento (para gráficos e informe)
+        # Historial de entrenamiento
         self.training_rewards: list[float] = []
 
     # ------------------------------------------------------------------
-    # Política ε-greedy  (firma exacta de la cátedra)
+    # Política ε-greedy  (misma firma que QLearningAgent)
     # ------------------------------------------------------------------
 
     def next_action(self, obs: np.ndarray) -> np.ndarray:
         """
         Selecciona una acción con política ε-greedy usando self.epsilon actual.
-
-        Parámetros
-        ----------
-        obs : np.ndarray
-            Observación continua del ambiente [posición, velocidad].
 
         Devuelve
         --------
@@ -84,28 +92,41 @@ class QLearningAgent:
         state = self.disc.obs_to_state(obs)
 
         if random.random() < self.epsilon:
-            action_idx = self.disc.sample_action_index()   # exploración
+            action_idx = self.disc.sample_action_index()
         else:
-            action_idx = int(np.argmax(self.Q[state]))     # explotación
+            action_idx = int(np.argmax(self.Q[state]))
 
         return self.disc.action_index_to_continuous(action_idx)
 
-    # ------------------------------------------------------------------
-    # Método interno: índice de acción para la actualización de Q
-    # ------------------------------------------------------------------
-
     def _action_index(self, obs: np.ndarray) -> int:
-        """Como next_action pero devuelve el índice (necesario para actualizar Q)."""
+        """Igual que next_action pero devuelve el índice (para actualizar Q)."""
         state = self.disc.obs_to_state(obs)
         if random.random() < self.epsilon:
             return self.disc.sample_action_index()
         return int(np.argmax(self.Q[state]))
 
     # ------------------------------------------------------------------
-    # Actualización Q (regla Bellman off-policy)
+    # Actualización Q
     # ------------------------------------------------------------------
 
-    def _update(
+    def _q_update(
+        self,
+        state: tuple,
+        action_idx: int,
+        reward: float,
+        next_state: tuple,
+        done: bool,
+    ) -> None:
+        """Regla de actualización Q-Learning (usada tanto en paso real como simulado)."""
+        max_next_q = 0.0 if done else float(np.max(self.Q[next_state]))
+        target = reward + self.gamma * max_next_q
+        self.Q[state][action_idx] += self.alpha * (target - self.Q[state][action_idx])
+
+    # ------------------------------------------------------------------
+    # Paso Dyna-Q completo (real + planificación)
+    # ------------------------------------------------------------------
+
+    def _dyna_step(
         self,
         obs: np.ndarray,
         action_idx: int,
@@ -116,12 +137,24 @@ class QLearningAgent:
         state = self.disc.obs_to_state(obs)
         next_state = self.disc.obs_to_state(next_obs)
 
-        max_next_q = 0.0 if done else float(np.max(self.Q[next_state]))
-        target = reward + self.gamma * max_next_q
-        self.Q[state][action_idx] += self.alpha * (target - self.Q[state][action_idx])
+        # 1. Actualización Q con experiencia real
+        self._q_update(state, action_idx, reward, next_state, done)
+
+        # 2. Actualizar modelo
+        self.model[(state, action_idx)] = (reward, next_state, done)
+        if (state, action_idx) not in self._visited:
+            self._visited.append((state, action_idx))
+
+        # 3. n pasos de planificación simulada
+        for _ in range(self.n_planning):
+            if not self._visited:
+                break
+            s, a = random.choice(self._visited)
+            r_sim, s_next_sim, done_sim = self.model[(s, a)]
+            self._q_update(s, a, r_sim, s_next_sim, done_sim)
 
     # ------------------------------------------------------------------
-    # Entrenamiento  (firma exacta de la cátedra + parámetros opcionales)
+    # Entrenamiento  (misma firma que QLearningAgent)
     # ------------------------------------------------------------------
 
     def train_agent(
@@ -138,28 +171,16 @@ class QLearningAgent:
         log_every: int = 200,
     ) -> list[float]:
         """
-        Entrena el agente con Q-Learning durante `episodes` episodios.
+        Entrena el agente con Dyna-Q durante `episodes` episodios.
 
-        Parámetros de la cátedra
-        ------------------------
-        env      : ambiente Gymnasium.
-        episodes : número de episodios de entrenamiento.
-        epsilon  : probabilidad inicial de exploración (ε-greedy).
-        gamma    : factor de descuento γ.
-        alpha    : tasa de aprendizaje α.
-
-        Parámetros adicionales (exploración de hiperparámetros)
-        --------------------------------------------------------
-        epsilon_decay : factor multiplicativo de decaimiento de ε por episodio.
-        epsilon_min   : valor mínimo de ε.
-        max_steps     : pasos máximos por episodio.
-        verbose       : imprimir progreso.
-        log_every     : frecuencia de logs.
+        Parámetros principales (mismos que QLearningAgent.train_agent)
+        ---------------------------------------------------------------
+        env, episodes, epsilon, gamma, alpha, epsilon_decay, epsilon_min
 
         Devuelve
         --------
         list[float]
-            Recompensa total por episodio (para graficar y reportar).
+            Recompensa total por episodio.
         """
         self.alpha = alpha
         self.gamma = gamma
@@ -177,14 +198,13 @@ class QLearningAgent:
                 next_obs, reward, terminated, truncated, _ = env.step(action)
                 done = terminated or truncated
 
-                self._update(obs, action_idx, reward, next_obs, done)
+                self._dyna_step(obs, action_idx, reward, next_obs, done)
                 obs = next_obs
                 total_reward += reward
 
                 if done:
                     break
 
-            # Decaimiento de ε
             self.epsilon = max(epsilon_min, self.epsilon * epsilon_decay)
             self.training_rewards.append(total_reward)
 
@@ -194,13 +214,14 @@ class QLearningAgent:
                     f"Ep {ep:>5}/{episodes} | "
                     f"Reward: {total_reward:>8.2f} | "
                     f"Media-100: {mean_100:>8.2f} | "
-                    f"ε: {self.epsilon:.4f}"
+                    f"ε: {self.epsilon:.4f} | "
+                    f"Modelo: {len(self.model)} pares"
                 )
 
         return self.training_rewards
 
     # ------------------------------------------------------------------
-    # Evaluación  (firma exacta de la cátedra)
+    # Evaluación  (misma firma que QLearningAgent)
     # ------------------------------------------------------------------
 
     def test_agent(
@@ -211,19 +232,14 @@ class QLearningAgent:
         render: bool = False,
     ) -> dict[str, float]:
         """
-        Evalúa el agente entrenado con política greedy pura (ε = 0).
-
-        Parámetros
-        ----------
-        env      : ambiente Gymnasium.
-        episodes : número de episodios de evaluación.
+        Evalúa el agente con política greedy pura (ε = 0).
 
         Devuelve
         --------
         dict con mean_reward, std_reward y success_rate.
         """
         saved_epsilon = self.epsilon
-        self.epsilon = 0.0  # greedy pura durante test
+        self.epsilon = 0.0
 
         rewards = []
         successes = 0
@@ -248,7 +264,7 @@ class QLearningAgent:
 
             rewards.append(total_reward)
 
-        self.epsilon = saved_epsilon  # restaurar ε
+        self.epsilon = saved_epsilon
 
         results = {
             "mean_reward": float(np.mean(rewards)),
@@ -267,23 +283,25 @@ class QLearningAgent:
     # ------------------------------------------------------------------
 
     def save(self, path: str) -> None:
-        """Guarda el modelo entrenado en formato .pkl."""
+        """Guarda el modelo en formato .pkl."""
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         with open(path, "wb") as f:
             pickle.dump(
                 {
                     "Q": self.Q,
+                    "model": self.model,
                     "disc": self.disc,
                     "alpha": self.alpha,
                     "gamma": self.gamma,
+                    "n_planning": self.n_planning,
                     "epsilon": self.epsilon,
                 },
                 f,
             )
-        print(f"Modelo guardado en: {path}")
+        print(f"Modelo Dyna-Q guardado en: {path}")
 
     @classmethod
-    def load(cls, path: str) -> "QLearningAgent":
+    def load(cls, path: str) -> "DynaQAgent":
         """Carga un modelo previamente guardado."""
         with open(path, "rb") as f:
             data = pickle.load(f)
@@ -292,10 +310,12 @@ class QLearningAgent:
             n_pos_bins=disc.n_pos_bins,
             n_vel_bins=disc.n_vel_bins,
             n_actions=disc.n_actions,
+            n_planning_steps=data["n_planning"],
         )
         agent.Q = data["Q"]
+        agent.model = data["model"]
         agent.alpha = data["alpha"]
         agent.gamma = data["gamma"]
         agent.epsilon = data["epsilon"]
-        print(f"Modelo cargado desde: {path}")
+        print(f"Modelo Dyna-Q cargado desde: {path}")
         return agent
