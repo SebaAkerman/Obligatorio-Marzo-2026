@@ -6,7 +6,7 @@ authors = [
     {name = "iturbideM",email = "martiniturbidenoria@gmail.com"}
 ]
 readme = "README.md"
-requires-python = "~3.10"
+requires-python = "~=3.10"
 dependencies = [
     "ipykernel (>=7.2.0,<8.0.0)",
     "gymnasium (>=1.3.0,<2.0.0)",
