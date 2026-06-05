@@ -1,0 +1,10 @@
+depth,label,avg_nodes,avg_time_s,win_rate
+2,Pure Minimax,3608,0.143,1.0
+2,AB Pruning,795,0.031,1.0
+2,AB + Move Ordering,286,0.138,0.98
+3,Pure Minimax,91153,3.178,1.0
+3,AB Pruning,8752,0.304,0.96
+3,AB + Move Ordering,2341,0.438,0.98
+4,Pure Minimax,1586170,45.587,0.88
+4,AB Pruning,40688,1.15,0.98
+4,AB + Move Ordering,5526,1.94,0.92

@@ -39,11 +39,13 @@ def h_mobility(board: Board, player: int) -> float:
 
 def h_open_cells(board: Board, player: int) -> float:
     """
-    Diferencia de acciones disponibles (ancho del espacio de acción).
+    Diferencia de movilidad normalizada.
 
-    Razonamiento: más acciones disponibles = más libertad táctica.
-    A diferencia de h_mobility (movimientos posibles), esto cuenta
-    combinaciones (dirección × celda_a_destruir), más granular.
+    Nota: usa la misma señal que h_mobility (get_possible_actions) pero
+    normalizada por el total de acciones disponibles → valor en [-1, 1].
+    La normalización evita que el valor dependa de la escala absoluta
+    de movilidad (tablero lleno vs vacío), haciendo la señal más estable
+    entre etapas del juego.
     """
     opponent = player % 2 + 1
     my_actions = len(board.get_possible_actions(player))
@@ -172,6 +174,60 @@ def eval_future_mobility_only(board: Board, player: int) -> float:
     return h_future_mobility(board, player)
 
 
+def h_territory(board: Board, player: int) -> float:
+    """
+    Territorio BFS: diferencia de celdas vacías alcanzables desde cada jugador.
+
+    A diferencia de h_mobility (movimientos inmediatos), esta métrica usa BFS
+    para calcular el área total de celdas vacías accesibles transitivamente
+    desde la posición de cada jugador. Captura el control de territorio a largo
+    plazo, no solo la movilidad inmediata.
+
+    Costo: O(n²) por jugador (BFS sobre el tablero), más caro que h_mobility
+    pero más informativa en tableros fragmentados.
+    """
+    from collections import deque
+
+    def bfs_area(start_pos, grid, board_size):
+        if start_pos is None:
+            return 0
+        visited = {start_pos}
+        queue = deque([start_pos])
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1),
+                      (-1, -1), (-1, 1), (1, -1), (1, 1)]
+        while queue:
+            r, c = queue.popleft()
+            for dr, dc in directions:
+                nr, nc = r + dr, c + dc
+                if (0 <= nr < board_size[0] and 0 <= nc < board_size[1]
+                        and grid[nr, nc] == 0 and (nr, nc) not in visited):
+                    visited.add((nr, nc))
+                    queue.append((nr, nc))
+        return len(visited)
+
+    opponent = player % 2 + 1
+    pos_p = board.find_player_position(player)
+    pos_o = board.find_player_position(opponent)
+
+    my_area = bfs_area(pos_p, board.grid, board.board_size)
+    opp_area = bfs_area(pos_o, board.grid, board.board_size)
+    return float(my_area - opp_area)
+
+
+def eval_territory(board: Board, player: int) -> float:
+    """Evalúa únicamente por territorio BFS."""
+    return h_territory(board, player)
+
+
+def eval_mobility_territory(board: Board, player: int,
+                             w_mob: float = 0.6, w_ter: float = 0.4) -> float:
+    """
+    Combinación ponderada de movilidad inmediata y territorio BFS.
+    Balancea reacción inmediata (mobility) con control territorial (BFS).
+    """
+    return w_mob * h_mobility(board, player) + w_ter * h_territory(board, player)
+
+
 # ---------------------------------------------------------------------------
 # Catálogo de funciones de evaluación para experimentación
 # ---------------------------------------------------------------------------
@@ -181,4 +237,6 @@ HEURISTICS = {
     "mobility_center": eval_mobility_center,
     "full": eval_full,
     "future_mobility": eval_future_mobility_only,
+    "territory": eval_territory,
+    "mobility_territory": eval_mobility_territory,
 }

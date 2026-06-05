@@ -147,7 +147,8 @@ class Board:
 
     def clone(self):
         """Devuelve una copia del tablero"""
-        board_clone = Board()
+        board_clone = object.__new__(Board)
+        board_clone.board_size = self.board_size
         board_clone.grid = np.copy(self.grid)
         return board_clone
     
