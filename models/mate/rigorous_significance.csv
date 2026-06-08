@@ -1,0 +1,11 @@
+h_a,h_b,wins_a,wins_b,n,win_rate_a,p_value,ci_lo,ci_hi,alpha_bonferroni,significant
+mob_only,mob_center,53,47,100,0.53,0.54851,0.4329,0.6249,0.005,False
+mob_only,full,44,56,100,0.44,0.23014,0.3467,0.5377,0.005,False
+mob_only,territory,50,50,100,0.5,1.0,0.4038,0.5962,0.005,False
+mob_only,mob_territory,42,58,100,0.42,0.1096,0.328,0.5179,0.005,False
+mob_center,full,45,55,100,0.45,0.31731,0.3561,0.5476,0.005,False
+mob_center,territory,53,47,100,0.53,0.54851,0.4329,0.6249,0.005,False
+mob_center,mob_territory,44,56,100,0.44,0.23014,0.3467,0.5377,0.005,False
+full,territory,45,55,100,0.45,0.31731,0.3561,0.5476,0.005,False
+full,mob_territory,56,44,100,0.56,0.23014,0.4623,0.6533,0.005,False
+territory,mob_territory,44,56,100,0.44,0.23014,0.3467,0.5377,0.005,False

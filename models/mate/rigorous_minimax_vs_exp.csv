@@ -1,0 +1,4 @@
+agent_a,agent_b,wins_a,n,win_rate_a,p_value,ci_lo,ci_hi,significant
+MM_d2,EX_d2,38,100,0.38,0.0164,0.291,0.4779,True
+MM_d3,EX_d3,94,100,0.94,0.0,0.8752,0.9722,True
+MM_d3,EX_d4,58,100,0.58,0.1096,0.4821,0.672,False

@@ -1,0 +1,6 @@
+heuristic,vs_mob_only,vs_mob_center,vs_full,vs_territory,vs_mob_territory
+mob_only,0,53,44,50,42
+mob_center,47,0,45,53,44
+full,56,55,0,45,56
+territory,50,47,55,0,44
+mob_territory,58,56,44,56,0

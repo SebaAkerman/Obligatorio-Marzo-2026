@@ -1,0 +1,6 @@
+heuristic,total_wins,total_games,win_rate,ci_lo,ci_hi
+mob_territory,214,400,0.535,0.486,0.5833
+full,212,400,0.53,0.481,0.5784
+territory,196,400,0.49,0.4413,0.5389
+mob_only,189,400,0.4725,0.4241,0.5215
+mob_center,189,400,0.4725,0.4241,0.5215

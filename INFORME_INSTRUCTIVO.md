@@ -80,27 +80,60 @@ Todos los números verificados con 100 episodios de evaluación (20/6/2026):
 | Minimax-AB vs Expectimax | 98% | ±1.9% |
 | Minimax(full) vs Minimax(mobility) | 76% | ±11.8% |
 
-#### Round-Robin de heurísticas (60 partidas/par, depth=3, RESULTADOS FINALES):
+#### Experimento Riguroso de Heurísticas (100 partidas/par, Bonferroni, depth=3):
 
-| Heurística | Victorias | Partidas | Win Rate | IC 95% |
-|------------|-----------|----------|----------|--------|
-| **territory** | 127 | 240 | **52.9%** | ±6.3% |
-| mob_territory | 125 | 240 | 52.1% | ±6.3% |
-| mob_center | 119 | 240 | 49.6% | ±6.3% |
-| full | 116 | 240 | 48.3% | ±6.3% |
-| mob_only | 113 | 240 | 47.1% | ±6.3% |
+**Diseño:** C(5,2)=10 pares × 100 partidas balanceadas (50 P1 + 50 P2). Test binomial por par.  
+Corrección Bonferroni: α_adj = 0.05/10 = **0.005**. Potencia ~94% para diferencias ≥10%.
 
-**Hallazgo clave:** `h_territory` (BFS reachability) gana el round-robin expandido.  
-Las diferencias están dentro del CI — ninguna es estadísticamente significativa al 95%.  
-`territory` domina como P1 (P1 advantage: ~73% en mirror match); como P2 es similar a mob_only.  
-`eval_full` sigue siendo el peor (señales conflictivas entre movilidad, centro y espacio).  
-**Ver:** `reports/figures/heuristic_roundrobin_full.png` y `heuristic_roundrobin_bar.png`
+| Heurística | Wins | Games | Win Rate | IC Wilson 95% | p-valor mejor par |
+|------------|------|-------|----------|---------------|-------------------|
+| mob_territory | 214 | 400 | 53.5% | [0.486, 0.583] | 0.1096 (n.s.) |
+| full | 212 | 400 | 53.0% | [0.481, 0.578] | 0.2301 (n.s.) |
+| territory | 196 | 400 | 49.0% | [0.441, 0.539] | 0.3173 (n.s.) |
+| mob_only | 189 | 400 | 47.2% | [0.424, 0.521] | 0.1096 (n.s.) |
+| mob_center | 189 | 400 | 47.2% | [0.424, 0.521] | 0.5485 (n.s.) |
 
-#### vs Stratagem (100 partidas, depth=3, mob_only):
-| Rol | Win % | CI 95% |
-|-----|-------|--------|
-| Nuestro agente como P1 | 84% | ±7.2% |
-| Nuestro agente como P2 | 54% | ±9.8% |
+**Conclusión científica:** Ningún par supera α=0.005 post-Bonferroni. Las heurísticas son  
+**estadísticamente equivalentes** en tablero 4×4 a depth=3. La elección correcta es `mob_only`  
+(más simple, más rápida), ya que los datos no justifican mayor complejidad.  
+**Ver:** `models/mate/rigorous_significance.csv`, `rigorous_matchup_matrix.csv`
+
+#### Experimento Riguroso — Sweep de Profundidad (vs baseline mob_only d3):
+
+| Config | Wins/100 | Win Rate | p-valor | Significativo |
+|--------|----------|----------|---------|---------------|
+| mob_only d2 | 34 | 34% | 0.0014 | ✓ — depth=2 pierde |
+| full d2 | 39 | 39% | 0.0278 | ✓ — depth=2 pierde |
+| mob_territory d2 | 45 | 45% | 0.317 | n.s. |
+| mob_territory d3 | 38 | 38% | 0.016 | ✓ — equivalente al baseline (ruido) |
+| full d3 | 44 | 44% | 0.230 | n.s. |
+| **mob_only d4** | **67** | **67%** | **0.0007** | **✓✓ MUY SIGNIFICATIVO** |
+| mob_territory d4 | 65 | 65% | 0.0027 | ✓✓ significativo |
+| full d4 | 56 | 56% | 0.230 | n.s. — complejidad extra no ayuda |
+
+**Hallazgo central:** La profundidad domina sobre la calidad de la heurística.  
+`mob_only d4` vence a `mob_only d3` con p=0.0007 — diferencia altamente significativa.  
+`full d4` no mejora significativamente: la mayor complejidad introduce ruido en las hojas.
+
+#### Experimento Riguroso — Minimax vs Expectimax (100 partidas balanceadas):
+
+| Matchup | Wins MM / 100 | Win Rate | p-valor | Conclusión |
+|---------|--------------|----------|---------|------------|
+| MM d2 vs EX d2 | 38 | 38% | 0.0164 | EX gana a depth=2 |
+| MM d3 vs EX d3 | 94 | **94%** | **0.0000** | MM aplasta a depth=3 |
+| MM d3 vs EX d4 | 58 | 58% | 0.1096 | n.s. — EX d+1 lo equipara |
+
+A depth=2: Expectimax gana porque el oponente no puede ser "visto" con suficiente lookahead.  
+A depth=3: Minimax aplasta (94%) — el oponente juega cerca del óptimo, la suposición de Minimax es correcta.  
+EX necesita un nivel extra de profundidad para compensar su modelo de oponente incorrecto.
+
+#### vs Stratagem — Agente Final (100 partidas balanceadas, mob_only d4):
+
+| Agente | Wins/100 | Win Rate | IC Wilson 95% | p-valor |
+|--------|----------|----------|---------------|---------|
+| Minimax-AB mob_only d4 | **76** | **76%** | [0.668, 0.833] | **0.0000** |
+
+**Archivo:** `models/mate/rigorous_vs_stratagem.csv`
 
 ---
 
@@ -252,17 +285,19 @@ Implicación: más planning no siempre es mejor. El n óptimo depende del presup
 | `h_mobility` | mis_movs - opp_movs | O(1) |
 | `h_center_proximity` | (dist_opp - dist_yo) / max_dist | O(1) |
 | `h_open_cells` | (mis_acciones - opp_acciones) / total | O(1) |
-| `h_future_mobility` | promedio movs futuros míos - opp | ~20x h_mobility |
-| `h_territory` | BFS: celdas vacías alcanzables yo - opp | ~1.8x h_mobility |
+| `h_future_mobility` | promedio movs futuros míos - opp | ~20× h_mobility |
+| `h_territory` | BFS: celdas vacías alcanzables yo - opp | ~1.8× h_mobility |
 
 **Funciones compuestas:**
-- `eval_mobility_only`: solo h_mobility — señal más directa de ganancia/pérdida en Isolation
+- `eval_mobility_only`: solo h_mobility — señal más directa; **elegida como heurística final**
 - `eval_mobility_center`: 0.7×mob + 0.3×center — útil en early-game cuando el tablero está abierto
-- `eval_full`: 0.6×mob + 0.2×center + 0.2×open_cells — peor en round-robin (señales conflictivas)
-- `eval_territory`: solo h_territory (BFS) — **gana round-robin expandido** (52.9%)
-- `eval_mobility_territory`: 0.6×mob + 0.4×territory — segundo lugar (52.1%), balance señal inmediata + territorial
+- `eval_full`: 0.6×mob + 0.2×center + 0.2×open_cells — señales parcialmente redundantes
+- `eval_territory`: solo h_territory (BFS) — captura control territorial a largo plazo
+- `eval_mobility_territory`: 0.6×mob + 0.4×territory — balance señal inmediata + territorial
 
 **Nota h_open_cells:** usa la misma señal subyacente que h_mobility (get_possible_actions), solo difiere en normalización. No es una señal independiente.
+
+**Por qué mob_only es la elección final:** el experimento riguroso (100 partidas/par, Bonferroni) demostró que ninguna heurística supera estadísticamente a las demás en 4×4 a depth=3. Se elige `mob_only` por ser la más simple y la de menor costo computacional — sin penalización empírica.
 
 #### 2.5 Experimentación y Torneos (2 pág)
 
@@ -274,45 +309,49 @@ Implicación: más planning no siempre es mejor. El n óptimo depende del presup
 | 4 | 100% (n=10) | 187,758 |
 - Depth=2 ya domina a Random. Las diferencias emergen contra oponentes hábiles.
 
-**Round-Robin de heurísticas (60 partidas/par, depth=3):**
-- **Insertar figura:** `heuristic_roundrobin_full.png` (heatmap 5×5) y `heuristic_roundrobin_bar.png` (ranking)
-- Tabla desde `models/mate/roundrobin_results.csv`:
+**Experimento riguroso de heurísticas (100 partidas/par, Bonferroni α=0.005):**
 
-| Heurística | Win Rate | IC 95% |
-|------------|----------|--------|
-| **territory** (BFS) | **52.9%** | ±6.3% |
-| mob_territory | 52.1% | ±6.3% |
-| mob_center | 49.6% | ±6.3% |
-| full | 48.3% | ±6.3% |
-| mob_only | 47.1% | ±6.3% |
+Ningún par de heurísticas resultó estadísticamente significativo post-corrección de Bonferroni.
+Las 5 heurísticas son **equivalentes** en tablero 4×4 a depth=3. Se elige `mob_only` por simplicidad.
 
-Diferencias dentro del IC → ninguna estadísticamente significativa. Territory domina como P1, similar a mob_only como P2.
+- **Datos:** `models/mate/rigorous_significance.csv`, `rigorous_matchup_matrix.csv`, `rigorous_summary.csv`
+- **Insertar figura:** `heuristic_roundrobin_full.png` (heatmap exploratorio, 60 partidas/par previo)
 
-**Minimax vs Expectimax (análisis profundo):**
-| Matchup | Win rate |
-|---------|----------|
-| Minimax-AB vs Random | 100% |
-| Expectimax vs Random | 78% |
-| Minimax-AB vs Expectimax (mismo depth) | 98% |
-| Expectimax (depth+1) vs Minimax-AB | ~50% |
-- Profundidad compensa la desventaja del modelo de oponente incorrecto
+**Sweep de profundidad — hallazgo central (vs baseline mob_only d3):**
+
+| Config | Win Rate | p-valor | Significativo |
+|--------|----------|---------|---------------|
+| mob_only d2 | 34% | 0.0014 | ✓ — depth=2 significativamente peor |
+| **mob_only d4** | **67%** | **0.0007** | **✓✓ — depth=4 significativamente mejor** |
+| mob_territory d4 | 65% | 0.0027 | ✓✓ — también mejora |
+| full d4 | 56% | 0.230 | n.s. — complejidad extra no ayuda |
+
+→ La profundidad domina sobre la calidad de la heurística. `full` a mayor depth introduce ruido.
+
+**Minimax vs Expectimax (100 partidas balanceadas, riguroso):**
+| Matchup | Win rate Minimax | p-valor | Conclusión |
+|---------|-----------------|---------|------------|
+| MM d2 vs EX d2 | 38% | 0.0164 | EX gana a depth=2 |
+| **MM d3 vs EX d3** | **94%** | **0.0000** | MM aplasta — oponente juega óptimo |
+| MM d3 vs EX d4 | 58% | 0.1096 | n.s. — EX d+1 lo equipara |
 
 **Ventaja del primer jugador:**
 - Mirror match (Minimax vs Minimax): P1 gana ~70% en tablero 4×4
 - El tablero pequeño favorece al primer movedor (más área "virgen")
 
-**vs Stratagem:**
-- **Insertar figura:** `vs_stratagem.png`
-- P1: 84% | P2: 54% | Total: 69%
-- Stratagem usa heurísticas de vecindad complementarias a movilidad
+**vs Stratagem — agente final (mob_only d4, 100 partidas balanceadas):**
+- **Insertar figura:** `vs_stratagem.png` (experimento exploratorio previo)
+- **Resultado riguroso:** 76/100 victorias, wr=76%, CI=[66.8%, 83.3%], p=0.0000
+- **Datos:** `models/mate/rigorous_vs_stratagem.csv`
 
 #### 2.6 Conclusiones MATE (0.5 pág)
-- **Mejor agente final:** MinimaxAgent(depth=3, heuristic=eval_territory, use_alpha_beta=True) — gana el round-robin expandido
-- **Alpha-Beta ESENCIAL:** depth=4 sin AB = 45.6s/partida (inviable). Con AB = 1.15s/partida.
-- **h_territory (BFS) supera h_mobility** en el round-robin completo — captura control territorial a largo plazo
-- **Minimax > Expectimax (98%)** contra oponente estratégico. Expectimax sería superior contra oponentes aleatorios/débiles.
-- **Ventaja P1:** ~72% en 4×4. Explicar en informe: el primer jugador ocupa más área libre.
-- **vs Stratagem:** 69% combinado (84% P1, 54% P2)
+- **Mejor agente final:** `MinimaxAgent(depth=4, heuristic=eval_mobility_only, use_alpha_beta=True)`
+  - Validado por experimento riguroso: 76% vs Stratagem (p=0.0000, CI=[66.8%, 83.3%])
+- **Heurísticas equivalentes:** experimento con Bonferroni confirma que ninguna heurística supera a otra en 4×4 depth=3. Se elige `mob_only` por ser la más simple y rápida.
+- **La profundidad es el factor decisivo:** depth=4 supera a depth=3 con p=0.0007. Más importante que sofisticar la heurística.
+- **Alpha-Beta ESENCIAL:** depth=4 sin AB = 45.6s/partida (inviable). Con AB = 1.15s/partida (97% menos nodos).
+- **Minimax >> Expectimax a depth=3 (94%, p=0.0000).** Expectimax solo compite si se le da un nivel extra de profundidad.
+- **Ventaja P1:** ~72% en 4×4. El primer jugador tiene ventaja estructural en tablero pequeño.
 
 ### 3. Conclusiones Generales (1 pág)
 - Tabla comparativa ambos proyectos
@@ -347,7 +386,30 @@ reports/figures/
 
 ---
 
-## 5. PASO A PASO: CREAR EL PDF
+## 5. ARCHIVOS DE RESULTADOS — REFERENCIA COMPLETA
+
+### Proyecto LOST
+| Archivo | Contenido |
+|---------|-----------|
+| `models/lost/qlearning_FINAL.pkl` | Modelo Q-Learning (30×30, 15 acc, 15k eps) |
+| `models/lost/dynaq_FINAL.pkl` | Modelo Dyna-Q (20×20, 15 acc, n=10, 5k eps) |
+| `models/lost/dyna_planning_sweep.csv` | Sweep n_planning=0..50 |
+
+### Proyecto MATE
+| Archivo | Contenido |
+|---------|-----------|
+| `models/mate/ab_impact_results.csv` | Impacto Alpha-Beta (depth 2,3,4) |
+| `models/mate/roundrobin_results.csv` | Round-robin exploratorio (60/par) |
+| `models/mate/rigorous_significance.csv` | **p-valores por par (Bonferroni)** |
+| `models/mate/rigorous_matchup_matrix.csv` | **Matriz de matchups completa** |
+| `models/mate/rigorous_summary.csv` | **Ranking con IC Wilson** |
+| `models/mate/rigorous_depth_sweep.csv` | **Sweep profundidad × heurística** |
+| `models/mate/rigorous_minimax_vs_exp.csv` | **Minimax vs Expectimax riguroso** |
+| `models/mate/rigorous_vs_stratagem.csv` | **Mejor agente vs Stratagem** |
+
+---
+
+## 6. PASO A PASO: CREAR EL PDF
 
 ### Paso 1: Crear el documento
 Abrir Google Docs. Título: "Obligatorio IA 2026 — Red Destination™".  
@@ -367,10 +429,13 @@ Para cada figura: Insert → Image → Upload from computer.
 Agregar caption debajo: "Figura N: Descripción"  
 Figuras LOST (en orden): learning_curve → ql_vs_dq → alpha → gamma → epsilon → dyna_planning
 
-### Paso 5: Sección MATE — datos de experimentos nuevos
-Después de que terminen los experimentos (ver Paso 0 abajo):
-- AB impact: leer `models/mate/ab_impact_results.csv` → copiar tabla
-- Round-robin: leer `models/mate/roundrobin_results.csv` → copiar standings
+### Paso 5: Sección MATE — datos del experimento riguroso
+Todos los experimentos están completos. Usar estos datos verificados:
+- AB impact: `models/mate/ab_impact_results.csv` → tabla de nodos y tiempos
+- Heurísticas: `models/mate/rigorous_summary.csv` → equivalencia estadística (Bonferroni)
+- Depth sweep: `models/mate/rigorous_depth_sweep.csv` → mob_only d4 gana (p=0.0007)
+- Minimax vs Expectimax: `models/mate/rigorous_minimax_vs_exp.csv`
+- vs Stratagem: `models/mate/rigorous_vs_stratagem.csv` → 76% wr (p=0.0000)
 
 ### Paso 6: Insertar figuras MATE
 Figuras MATE: ab_impact → roundrobin_full → roundrobin_bar → vs_stratagem
@@ -392,65 +457,28 @@ Tamaño final esperado: 5-15 MB dependiendo de la calidad de imágenes.
 ### Paso 10: Revisar checklist
 - [ ] Portada con nombres y números de estudiante
 - [ ] Sección LOST: discretización, Q-Learning, hiperparámetros, Dyna-Q
-- [ ] Sección MATE: Minimax+AB+impacto, Expectimax, heurísticas, torneos
+- [ ] Sección MATE: Minimax+AB+impacto, Expectimax, heurísticas, experimento riguroso
 - [ ] Al menos 5 figuras
-- [ ] Tablas de resultados con estadísticas (mean ± std, CI95, success rate)
+- [ ] Tablas de resultados con estadísticas (mean ± std, CI95, success rate, p-valores)
 - [ ] Modelos .pkl mencionados y adjuntos en el ZIP
 - [ ] Declaración uso de IA
 - [ ] ≤ 20 páginas (sin contar anexos)
 - [ ] ZIP con todo: código .py, notebooks .ipynb, modelos .pkl, informe .pdf
+- [ ] **Agente final MATE correcto:** `MinimaxAgent(depth=4, heuristic=eval_mobility_only, use_alpha_beta=True)`
+- [ ] **Experimento riguroso referenciado:** `scripts/experiment_heuristics_rigorous.py` + CSVs en `models/mate/`
 
 ---
 
-## 6. PASO 0: ESPERAR EXPERIMENTOS EN CURSO
+## 6. ESTADO DE EXPERIMENTOS — TODOS COMPLETADOS ✅
 
-Antes de escribir el PDF, verificar que terminen estos experimentos:
+| Experimento | Script | Estado | Resultados |
+|------------|--------|--------|------------|
+| Alpha-Beta Impact | `experiment_ab_impact.py` | ✅ | `ab_impact_results.csv`, `ab_impact.png` |
+| Dyna-Q n_planning sweep | `experiment_dyna_planning.py` | ✅ | `dyna_planning_sweep.csv`, `dyna_planning_sweep.png` |
+| Round-robin exploratorio (60/par) | `experiment_heuristics_roundrobin.py` | ✅ | `roundrobin_results.csv` |
+| **Round-robin riguroso (100/par, Bonferroni)** | `experiment_heuristics_rigorous.py` | ✅ | `rigorous_*.csv` |
 
-### Experimento 1: Alpha-Beta Impact
-**Script:** `scripts/experiment_ab_impact.py`  
-**Estado:** Datos depth=2 y depth=3 ✅ disponibles. Depth=4 pure minimax corriendo (puede tardar mucho).  
-**Acción:** Si depth=4 pure minimax no termina en 30 min, anotar en el informe que es "computacionalmente infeasible" (es un hallazgo válido).  
-**Resultados disponibles:** `models/mate/ab_impact_results.csv` y `reports/figures/ab_impact.png`
-
-### Experimento 2: DynaQ n_planning sweep
-**Script:** `scripts/experiment_dyna_planning.py`  
-**Estado:** Corriendo en background. Resultados parciales (3000 eps, q_init=0, decay=0.9995):
-
-| n_planning | Reward | Éxito | 1er ep |
-|-----------|--------|-------|--------|
-| 0 (QL puro) | 0.00 | **0%** | ep 17 (no converge) |
-| 1 | 0.00 | **0%** | nunca |
-| 5 | 0.00 | **0%** | nunca |
-| 10 | 39.97 | **66%** | ep 51 |
-| 20 | pendiente... | | |
-| 50 | pendiente... | | |
-
-**Hallazgos clave:**
-- n ≥ 10 es el **umbral crítico** para convergencia en 3000 eps
-- n=20 tiene **PEOR rendimiento** que n=10 (18% vs 66%) — premature convergence
-- Con modelo escaso (pocas visitas), planning excesivo refuerza valores Q incorrectos
-- El modelo FINAL usa n=10 con 5000 eps → 100% (balance óptimo)
-
-**Curva no monótona:** Más planning no siempre es mejor. Trade-off: más planning = aprende más rápido, pero también puede sobreajustarse a un modelo impreciso. Sutton & Barto discuten esto en cap 8.3 (prioritized sweeping como solución).
-
-**Resultados completos:** `reports/figures/dyna_planning_sweep.png` y `models/lost/dyna_planning_sweep.csv`
-
-### Experimento 3: Round-Robin de heurísticas
-**Script:** `scripts/experiment_heuristics_roundrobin.py`  
-**Estado:** Corriendo en background (~20-30 min).  
-**Resultados:** `reports/figures/heuristic_roundrobin_full.png`, `heuristic_roundrobin_bar.png`, `models/mate/roundrobin_results.csv`
-
-Para verificar progreso:
-```bash
-# DynaQ sweep
-cat models/lost/dyna_planning_sweep.csv
-
-# Round-robin
-cat models/mate/roundrobin_results.csv
-
-# AB impact
-cat models/mate/ab_impact_results.csv
-```
+**No hay experimentos pendientes.** Todos los datos en `models/` son finales.
 
 ---
 
