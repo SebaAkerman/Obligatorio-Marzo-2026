@@ -301,6 +301,21 @@ Implicación: más planning no siempre es mejor. El n óptimo depende del presup
 
 #### 2.5 Experimentación y Torneos (2 pág)
 
+**Diseño experimental — qué se midió y por qué:**
+
+| Prueba | Objetivo | Metodología | N |
+|--------|----------|-------------|---|
+| Pure vs AB vs AB+MO | Cuantificar impacto de Alpha-Beta | nodos + tiempo + win% vs Random | 50/config |
+| Minimax vs Expectimax | Decidir qué técnica usar | Balanced match, test binomial | 100/matchup |
+| Round-robin heurísticas | Comparar funciones de evaluación | Round-robin balanceado + Bonferroni | 100/par |
+| Sweep depth × heurística | Determinar si depth compensa heurística | vs baseline mob_only d3 | 100/config |
+| Agente final vs Stratagem | Benchmark externo (agente cátedra) | Balanced match | 100 |
+| Agente final vs Random | Confirmar dominancia básica | Balanced match | 100 |
+| Mirror match d4 vs d4 | Cuantificar ventaja P1 a depth final | Sin balanceo de roles | 100 |
+
+**Criterio de evaluación:** win rate balanceado (50% P1, 50% P2) + test binomial (α=0.05,
+corrección Bonferroni donde hay múltiples comparaciones) + IC Wilson 95%.
+
 **Impacto de la profundidad:**
 | Depth | Win% vs Random | Nodos promedio/partida |
 |-------|---------------|----------------------|
@@ -339,10 +354,20 @@ Las 5 heurísticas son **equivalentes** en tablero 4×4 a depth=3. Se elige `mob
 - Mirror match (Minimax vs Minimax): P1 gana ~70% en tablero 4×4
 - El tablero pequeño favorece al primer movedor (más área "virgen")
 
-**vs Stratagem — agente final (mob_only d4, 100 partidas balanceadas):**
-- **Insertar figura:** `vs_stratagem.png` (experimento exploratorio previo)
-- **Resultado riguroso:** 76/100 victorias, wr=76%, CI=[66.8%, 83.3%], p=0.0000
-- **Datos:** `models/mate/rigorous_vs_stratagem.csv`
+**Experimentos complementarios (mob_only d4, 100 partidas balanceadas c/u):**
+
+| Experimento | Resultado | Propósito |
+|---|---|---|
+| Agente final vs Stratagem | **76%**, p≈0, CI=[66.8%,83.3%] | Benchmark externo |
+| Agente final vs Random | **85%**, p≈0, CI=[76.7%,90.7%] | Confirmar dominancia básica |
+| Mirror match d4 vs d4 | P1 gana **73%**, p≈0, CI=[63.6%,80.7%] | Cuantificar ventaja P1 a depth=4 |
+
+**Hallazgo del mirror match:** el primer jugador gana 73% de las partidas a depth=4,
+diferencia estadísticamente significativa (p≈0). Esto explica por qué todos los torneos
+balancean P1/P2 — sin ese balance, los resultados estarían sesgados estructuralmente.
+
+- **Insertar figura:** `rigorous_vs_stratagem.png` ★ (incluye vs Random y vs Stratagem)
+- **Datos:** `models/mate/rigorous_vs_stratagem.csv`, `models/mate/rigorous_extra.csv`
 
 #### 2.6 Conclusiones MATE (0.5 pág)
 - **Mejor agente final:** `MinimaxAgent(depth=4, heuristic=eval_mobility_only, use_alpha_beta=True)`
@@ -369,20 +394,33 @@ Las 5 heurísticas son **equivalentes** en tablero 4×4 a depth=3. Se elige `mob
 
 ```
 reports/figures/
-├── ql_learning_curve.png           # LOST: curva Q-Learning 15k eps
-├── dq_learning_curve.png           # LOST: curva Dyna-Q 5k eps
-├── ql_vs_dq_comparison.png         # LOST: comparación primeros 5k eps
-├── alpha_search.png                # LOST: grilla α
-├── gamma_search.png                # LOST: grilla γ
-├── epsilon_decay_search.png        # LOST: grilla ε decay
-├── dyna_planning_sweep.png         # LOST: sweep n_planning 0-50 ← NUEVO
-├── ab_impact.png                   # MATE: impacto Alpha-Beta ← NUEVO
-├── heuristic_roundrobin_full.png   # MATE: heatmap round-robin ← NUEVO
-├── heuristic_roundrobin_bar.png    # MATE: ranking final ← NUEVO
-├── depth_vs_winrate.png            # MATE: profundidad vs win rate
-├── vs_stratagem.png                # MATE: vs agente referencia
-└── planning_steps_search.png       # (versión anterior, reemplazar con dyna_planning_sweep.png)
+│
+│  PROYECTO LOST
+├── ql_learning_curve.png             curva Q-Learning 15k eps
+├── dq_learning_curve.png             curva Dyna-Q 5k eps
+├── ql_vs_dq_comparison.png           comparación primeros 5k eps
+├── alpha_search.png                  grilla α
+├── gamma_search.png                  grilla γ
+├── epsilon_decay_search.png          grilla ε decay
+├── dyna_planning_sweep.png           sweep n_planning 0-50
+│
+│  PROYECTO MATE — Exploratorio (usa en informe solo como contexto)
+├── ab_impact.png                     impacto Alpha-Beta (nodos + tiempo)
+├── depth_vs_winrate.png              depth vs win% vs Random
+├── heuristic_roundrobin_full.png     heatmap round-robin 60/par (exploratorio)
+├── heuristic_roundrobin_bar.png      ranking round-robin 60/par (exploratorio)
+├── vs_stratagem.png                  vs Stratagem depth=3 P1/P2 separado (OBSOLETO)
+│
+│  PROYECTO MATE — Experimento riguroso (★ USAR ESTAS EN EL INFORME)
+├── rigorous_depth_sweep.png        ★ sweep depth×heurística con significancia
+├── rigorous_roundrobin.png         ★ round-robin 100/par + matriz de matchups
+├── rigorous_minimax_vs_exp.png     ★ Minimax vs Expectimax con CIs
+├── rigorous_vs_stratagem.png       ★ agente final (d4) vs Stratagem + vs Random
+└── rigorous_summary.png            ★ resumen ejecutivo 3 paneles (AB + depth + benchmarks)
 ```
+
+**Para el informe usar siempre las figuras `rigorous_*`. Las figuras exploratorias anteriores
+son útiles solo para mostrar el proceso iterativo de investigación.**
 
 ---
 
@@ -406,6 +444,7 @@ reports/figures/
 | `models/mate/rigorous_depth_sweep.csv` | **Sweep profundidad × heurística** |
 | `models/mate/rigorous_minimax_vs_exp.csv` | **Minimax vs Expectimax riguroso** |
 | `models/mate/rigorous_vs_stratagem.csv` | **Mejor agente vs Stratagem** |
+| `models/mate/rigorous_extra.csv` | **Final vs Random + Mirror match (P1 advantage)** |
 
 ---
 
@@ -438,7 +477,16 @@ Todos los experimentos están completos. Usar estos datos verificados:
 - vs Stratagem: `models/mate/rigorous_vs_stratagem.csv` → 76% wr (p=0.0000)
 
 ### Paso 6: Insertar figuras MATE
-Figuras MATE: ab_impact → roundrobin_full → roundrobin_bar → vs_stratagem
+Figuras MATE (usar las `rigorous_*` como principales):
+1. `ab_impact.png` — impacto Alpha-Beta (nodos y tiempo por profundidad)
+2. `rigorous_depth_sweep.png` ★ — depth × heurística, resultado central
+3. `rigorous_roundrobin.png` ★ — equivalencia estadística de heurísticas
+4. `rigorous_minimax_vs_exp.png` ★ — Minimax vs Expectimax a distintas profundidades
+5. `rigorous_vs_stratagem.png` ★ — benchmark final del agente elegido
+6. `rigorous_summary.png` ★ — resumen 3-paneles para conclusiones
+
+Figuras exploratorias opcionales (para mostrar proceso iterativo):
+- `heuristic_roundrobin_full.png` — heatmap exploratorio 60/par
 
 ### Paso 7: Revisar longitud
 Objetivo: 15-18 páginas de contenido, 2-5 páginas de anexos.  
@@ -477,6 +525,7 @@ Tamaño final esperado: 5-15 MB dependiendo de la calidad de imágenes.
 | Dyna-Q n_planning sweep | `experiment_dyna_planning.py` | ✅ | `dyna_planning_sweep.csv`, `dyna_planning_sweep.png` |
 | Round-robin exploratorio (60/par) | `experiment_heuristics_roundrobin.py` | ✅ | `roundrobin_results.csv` |
 | **Round-robin riguroso (100/par, Bonferroni)** | `experiment_heuristics_rigorous.py` | ✅ | `rigorous_*.csv` |
+| **Figuras rigurosas + experimentos complementarios** | `generate_mate_figures.py` | ✅ | `rigorous_*.png`, `rigorous_extra.csv` |
 
 **No hay experimentos pendientes.** Todos los datos en `models/` son finales.
 
