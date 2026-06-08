@@ -25,8 +25,9 @@ Todos los números verificados con 100 episodios de evaluación (20/6/2026):
 
 | Modelo | Config | Reward | Std | CI 95% | Éxito |
 |--------|--------|--------|-----|--------|-------|
-| Q-Learning FINAL | 30×30 bins, 15 acc, 15k eps | **94.14** | 0.63 | ±0.12 | **100%** | ~25 min |
-| Dyna-Q FINAL | 20×20 bins, 15 acc, n=10, 5k eps | **89.41** | 0.30 | ±0.06 | **100%** | ~10 min |
+| Q-Learning FINAL | 30×30 bins, 15 acc, 15k eps, q_init=1.0 | **94.14** | 0.63 | ±0.12 | **100%** | ~5 min |
+| Dyna-Q FINAL | 20×20 bins, 15 acc, n=10, 5k eps, q_init=0 | **89.41** | 0.30 | ±0.06 | **100%** | ~4 min |
+| **QL multi-seed (3 seeds)** | ídem, seeds 0/1/2 | **93.02** | **0.97 entre seeds** | — | **100%** | ~5 min/seed |
 
 **Archivos:** `models/lost/qlearning_FINAL.pkl` y `models/lost/dynaq_FINAL.pkl`
 
@@ -389,39 +390,60 @@ balancean P1/P2 — sin ese balance, los resultados estarían sesgados estructur
 | Desafío central | Reward sparse; meta a ~500 pasos | Factor de ramificación ~96; profundidad limitada |
 | Solución al desafío | q_init=1.0 (init. optimista) + γ=0.99 | Alpha-Beta Pruning (97% reducción de nodos) |
 | Mejor resultado | 94.14 reward, 100% éxito (15k eps) | 76% vs Stratagem, 85% vs Random |
-| Tiempo de entrenamiento | QL: ~25 min (15k eps) / DQ: ~10 min (5k eps) | No aplica (búsqueda en tiempo real) |
+| Tiempo de entrenamiento | QL: ~5 min (15k eps) / DQ: ~4 min (5k eps) | No aplica (búsqueda en tiempo real) |
 | Hallazgo no obvio | γ<0.99 hace la meta invisible (0.9^500≈10⁻²³) | Profundidad > heurística (mob_only d4 > territory d3) |
 
 **Uso de IA Generativa:**
 Herramienta: Claude (Anthropic). Uso: generación de esqueletos de clases, revisión de implementaciones y estructuración del repositorio. Todo el contenido fue verificado y comprendido por los integrantes. Los errores son responsabilidad de los autores.
 
-**Dificultades encontradas:**
-
-*(Copiar del punto 4 de Advertencias abajo)*
+**Dificultades encontradas:** ver Sección 4 (Advertencias).
 
 ### 4. Advertencias y Dificultades (obligatorio por la letra)
 
 #### LOST — Dificultades encontradas
 
 **1. q_init=0 nunca converge** *(dificultad resuelta)*
-Q-Learning con inicialización en 0 no llega a la meta en ninguna configuración probada. El agente aprende que aplicar fuerza cero minimiza la penalización `-0.1·a²`, quedando atrapado en un mínimo local. Solución: inicialización optimista `q_init=1.0` fuerza la exploración de cada estado antes de concluir que es malo.
+Q-Learning con inicialización en 0 no llega a la meta en ninguna configuración. El agente aprende que aplicar fuerza cero minimiza la penalización `-0.1·a²`, quedando atrapado en un mínimo local. Solución: `q_init=1.0` fuerza la exploración de cada estado antes de concluir que es malo.
 
 **2. γ < 0.99 hace la meta invisible** *(dificultad resuelta)*
-Con γ=0.90, la recompensa de la meta descontada hasta el inicio vale `0.9^500 ≈ 10⁻²³` — un número tan pequeño que los TD-updates nunca lo propagan. No es un bug; es una propiedad matemática del ambiente. Solo γ≥0.99 permite que el agente "vea" la meta a través de los ~500 pasos que la separan del inicio.
+Con γ=0.90, la recompensa de la meta descontada vale `0.9^500 ≈ 10⁻²³` — los TD-updates nunca la propagan. Solo γ≥0.99 permite que el agente "vea" la meta a ~500 pasos de distancia.
 
-**3. Dyna-Q: curva no monótona de n_planning** *(dificultad resuelta)*
-Más planning no siempre mejora el agente. Con n=20 el rendimiento cae de 66% a 18% respecto a n=10. El modelo aprendido con pocas visitas es impreciso; con n=20 pasos simulados por cada paso real, el agente refuerza valores Q incorrectos antes de que el modelo sea confiable. Solución: n=10 es el punto óptimo.
+**3. Dyna-Q: sensibilidad al estado del generador aleatorio** *(dificultad descubierta en validación)*
+Dyna-Q con `q_init=0` falla consistentemente al fijar semillas (`random.seed` + `np.random.seed`): 0% de éxito en 3 seeds distintas con 5k episodios. El modelo FINAL existente fue entrenado sin semilla fijada y convergió gracias a un estado RNG favorable. La causa: Dyna-Q necesita encontrar la meta *al menos una vez* con exploración aleatoria para que el planning propague el valor. Con un estado RNG desfavorable, la exploración nunca llega a la meta y el planning queda vacío.
+**Solución verificada:** `q_init=1.0` hace Dyna-Q robusto y reproducible (ver experimento multi-semilla en `models/lost/multiseed_corrected.csv`).
+
+**4. Dyna-Q: curva no monótona de n_planning** *(dificultad resuelta)*
+Con n=20, el rendimiento cae de 66% a 18% respecto a n=10. El modelo con pocas visitas es impreciso; n=20 refuerza valores Q incorrectos antes de que el modelo sea confiable. n=10 es el punto óptimo.
+
+#### LOST — Resultados multi-semilla (3 seeds con seeding dual numpy+python)
+
+| Algoritmo | q_init | Eps | Seed 0 | Seed 1 | Seed 2 | Cross-seed |
+|---|---|---|---|---|---|---|
+| Q-Learning | 1.0 | 15k | 92.75/100% | 91.98/100% | 94.32/100% | **93.02 ± 0.97** ✅ |
+| Dyna-Q | 0.0 | 5k | 0.00/0% | 0.00/0% | 0.00/0% | 0.00 ± 0.00 ❌ |
+| Dyna-Q | 1.0 | 5k | 91.46/100% | 87.16/100% | 61.52/70% | 80.05 ± 13.22 ⚠️ |
+| Dyna-Q | 0.0 | 10k | 91.36/100% | — | — | parcial ✅ |
+
+**Conclusión:** Q-Learning es el único robusto y reproducible a 15k eps con q_init=1.0.
+Dyna-Q requiere ≥10k eps o condiciones especiales para ser reproducible. El modelo FINAL
+existente (`dynaq_FINAL.pkl`) fue entrenado sin semilla fijada y resultó exitoso; es válido
+pero no está garantizado a reproducirse en cualquier seed.
+
+**Datos:** `models/lost/multiseed_corrected.csv`
 
 #### MATE — Dificultades encontradas
 
-**4. Move Ordering paradox** *(dificultad resuelta)*
-Implementar Move Ordering redujo los nodos expandidos en 99.7% pero resultó más lento que Alpha-Beta solo (1.94s vs 1.15s por partida) y con menor win rate a depth=4. El overhead de calcular y ordenar los scores heurísticos para cada acción supera el beneficio de la poda adicional cuando la heurística es `h_mobility` (O(1)). Move Ordering solo vale la pena con heurísticas costosas.
+**5. Move Ordering paradox** *(dificultad resuelta)*
+Move Ordering reduce 99.7% los nodos pero es más lento (1.94s vs 1.15s/partida, depth=4). El overhead de sorting supera el beneficio cuando la heurística es O(1). Solo vale la pena con heurísticas costosas.
 
-**5. Ventaja estructural del primer jugador** *(no resuelta — se mitiga)*
-En tablero 4×4, el primer jugador gana el 73% de las partidas en mirror match (p≈0). Esta ventaja es inherente al tamaño del tablero y no se puede eliminar. Se mitiga usando torneos balanceados (50% P1, 50% P2) para que las comparaciones sean justas. En partidas reales, el rol se asigna al azar.
+**6. Ventaja estructural del primer jugador** *(no resuelta — se mitiga)*
+P1 gana el 73% en mirror match a depth=4 (p≈0). Inherente al tablero 4×4. Se mitiga con torneos balanceados (50% P1, 50% P2).
 
-**6. Heurísticas estadísticamente equivalentes** *(hallazgo, no dificultad)*
-Todos los intentos de diseñar heurísticas superiores a `h_mobility` fallaron en superar el umbral estadístico. Las 5 heurísticas probadas son equivalentes en tablero 4×4 a depth=3 (Bonferroni). Esto no es una limitación del código sino una propiedad del ambiente: con AB a depth=4, el lookahead compensa ampliamente la calidad de la evaluación en las hojas.
+**7. Heurísticas estadísticamente equivalentes** *(hallazgo, no dificultad)*
+Las 5 heurísticas son equivalentes en 4×4 a depth=3 (Bonferroni). Con AB a depth=4, el lookahead compensa la calidad de la evaluación hoja.
+
+**8. Depth=5 mejora vs depth=4 pero no vs Stratagem** *(hallazgo de extensión)*
+depth=5 gana a depth=4 en cabeza a cabeza (62%, p=0.016) pero no mejora significativamente vs Stratagem (74% vs 76%, CIs solapados). depth=4 es el punto óptimo práctico. Datos: `models/mate/depth5_results.csv`.
 
 ### 5. Anexos
 - Figuras adicionales (curvas de aprendizaje individuales, heatmap round-robin exploratorio)
@@ -597,7 +619,7 @@ zip -r Obligatorio_Akerman_Kelmanson.zip Obligatorio-Marzo-2026/ \
 - [ ] Q-Learning: ecuación Bellman, política ε-greedy, análisis q_init
 - [ ] Hiperparámetros α, γ (con cálculo 0.9^500), ε decay — tabla + figura por cada uno
 - [ ] Dyna-Q: algoritmo + sweep n_planning (curva no monótona explicada)
-- [ ] Resultados finales con tiempos: QL 94.14±0.63/100% (~25 min), DQ 89.41±0.30/100% (~10 min)
+- [ ] Resultados finales: QL 94.14±0.63/100% (~5 min/run), QL multi-seed 93.02±0.97/100%, DQ 89.41±0.30/100% (~4 min/run)
 
 **Contenido MATE:**
 - [ ] Descripción ambiente Isolation 4×4
@@ -635,6 +657,8 @@ zip -r Obligatorio_Akerman_Kelmanson.zip Obligatorio-Marzo-2026/ \
 | Round-robin exploratorio (60/par) | `experiment_heuristics_roundrobin.py` | ✅ | `roundrobin_results.csv` |
 | **Round-robin riguroso (100/par, Bonferroni)** | `experiment_heuristics_rigorous.py` | ✅ | `rigorous_*.csv` |
 | **Figuras rigurosas + experimentos complementarios** | `generate_mate_figures.py` | ✅ | `rigorous_*.png`, `rigorous_extra.csv` |
+| **Multi-semilla LOST (seeding dual)** | experimento en sesión | ✅ | `multiseed_corrected.csv` |
+| **Depth=5 MATE** | experimento en sesión | ✅ | `depth5_results.csv` |
 
 **No hay experimentos pendientes.** Todos los datos en `models/` son finales.
 

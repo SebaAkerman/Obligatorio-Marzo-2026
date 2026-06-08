@@ -1,0 +1,8 @@
+algorithm,seed,episodes,mean_reward,std_reward,success_rate,train_time_s
+qlearning,0,15000,35.3179,56.0856,0.52,96.8
+qlearning,1,15000,94.8012,0.3759,1.0,96.2
+qlearning,2,15000,92.2348,0.2355,1.0,100.7
+dynaq,0,5000,0.0,0.0,0.0,220.1
+dynaq,1,5000,0.0,0.0,0.0,256.6
+dynaq,2,5000,0.0,0.0,0.0,264.3
+qlearning_30k,42,30000,94.2876,0.3986,1.0,136.2
