@@ -25,8 +25,8 @@ Todos los números verificados con 100 episodios de evaluación (20/6/2026):
 
 | Modelo | Config | Reward | Std | CI 95% | Éxito |
 |--------|--------|--------|-----|--------|-------|
-| Q-Learning FINAL | 30×30 bins, 15 acc, 15k eps | **94.14** | 0.63 | ±0.12 | **100%** |
-| Dyna-Q FINAL | 20×20 bins, 15 acc, n=10, 5k eps | **89.41** | 0.30 | ±0.06 | **100%** |
+| Q-Learning FINAL | 30×30 bins, 15 acc, 15k eps | **94.14** | 0.63 | ±0.12 | **100%** | ~25 min |
+| Dyna-Q FINAL | 20×20 bins, 15 acc, n=10, 5k eps | **89.41** | 0.30 | ±0.06 | **100%** | ~10 min |
 
 **Archivos:** `models/lost/qlearning_FINAL.pkl` y `models/lost/dynaq_FINAL.pkl`
 
@@ -379,14 +379,54 @@ balancean P1/P2 — sin ese balance, los resultados estarían sesgados estructur
 - **Ventaja P1:** ~72% en 4×4. El primer jugador tiene ventaja estructural en tablero pequeño.
 
 ### 3. Conclusiones Generales (1 pág)
-- Tabla comparativa ambos proyectos
-- Uso de IA Generativa (según README): Claude para estructura y esqueletos, verificado por nosotros
-- Dificultades encontradas
 
-### 4. Anexos
-- Figuras adicionales (learning curves, etc.)
-- Fragmentos de código relevante (discretizador, regla de actualización Q)
-- No poner código completo — referir al repositorio
+**Tabla comparativa ambos proyectos:**
+
+| Aspecto | LOST (Q-Learning) | MATE (Minimax) |
+|---------|------------------|----------------|
+| Tipo de problema | Aprendizaje por refuerzo (ambiente continuo) | Búsqueda adversarial (juego de suma cero) |
+| Técnica principal | Q-Learning tabular + Dyna-Q | Minimax con Alpha-Beta Pruning |
+| Desafío central | Reward sparse; meta a ~500 pasos | Factor de ramificación ~96; profundidad limitada |
+| Solución al desafío | q_init=1.0 (init. optimista) + γ=0.99 | Alpha-Beta Pruning (97% reducción de nodos) |
+| Mejor resultado | 94.14 reward, 100% éxito (15k eps) | 76% vs Stratagem, 85% vs Random |
+| Tiempo de entrenamiento | QL: ~25 min (15k eps) / DQ: ~10 min (5k eps) | No aplica (búsqueda en tiempo real) |
+| Hallazgo no obvio | γ<0.99 hace la meta invisible (0.9^500≈10⁻²³) | Profundidad > heurística (mob_only d4 > territory d3) |
+
+**Uso de IA Generativa:**
+Herramienta: Claude (Anthropic). Uso: generación de esqueletos de clases, revisión de implementaciones y estructuración del repositorio. Todo el contenido fue verificado y comprendido por los integrantes. Los errores son responsabilidad de los autores.
+
+**Dificultades encontradas:**
+
+*(Copiar del punto 4 de Advertencias abajo)*
+
+### 4. Advertencias y Dificultades (obligatorio por la letra)
+
+#### LOST — Dificultades encontradas
+
+**1. q_init=0 nunca converge** *(dificultad resuelta)*
+Q-Learning con inicialización en 0 no llega a la meta en ninguna configuración probada. El agente aprende que aplicar fuerza cero minimiza la penalización `-0.1·a²`, quedando atrapado en un mínimo local. Solución: inicialización optimista `q_init=1.0` fuerza la exploración de cada estado antes de concluir que es malo.
+
+**2. γ < 0.99 hace la meta invisible** *(dificultad resuelta)*
+Con γ=0.90, la recompensa de la meta descontada hasta el inicio vale `0.9^500 ≈ 10⁻²³` — un número tan pequeño que los TD-updates nunca lo propagan. No es un bug; es una propiedad matemática del ambiente. Solo γ≥0.99 permite que el agente "vea" la meta a través de los ~500 pasos que la separan del inicio.
+
+**3. Dyna-Q: curva no monótona de n_planning** *(dificultad resuelta)*
+Más planning no siempre mejora el agente. Con n=20 el rendimiento cae de 66% a 18% respecto a n=10. El modelo aprendido con pocas visitas es impreciso; con n=20 pasos simulados por cada paso real, el agente refuerza valores Q incorrectos antes de que el modelo sea confiable. Solución: n=10 es el punto óptimo.
+
+#### MATE — Dificultades encontradas
+
+**4. Move Ordering paradox** *(dificultad resuelta)*
+Implementar Move Ordering redujo los nodos expandidos en 99.7% pero resultó más lento que Alpha-Beta solo (1.94s vs 1.15s por partida) y con menor win rate a depth=4. El overhead de calcular y ordenar los scores heurísticos para cada acción supera el beneficio de la poda adicional cuando la heurística es `h_mobility` (O(1)). Move Ordering solo vale la pena con heurísticas costosas.
+
+**5. Ventaja estructural del primer jugador** *(no resuelta — se mitiga)*
+En tablero 4×4, el primer jugador gana el 73% de las partidas en mirror match (p≈0). Esta ventaja es inherente al tamaño del tablero y no se puede eliminar. Se mitiga usando torneos balanceados (50% P1, 50% P2) para que las comparaciones sean justas. En partidas reales, el rol se asigna al azar.
+
+**6. Heurísticas estadísticamente equivalentes** *(hallazgo, no dificultad)*
+Todos los intentos de diseñar heurísticas superiores a `h_mobility` fallaron en superar el umbral estadístico. Las 5 heurísticas probadas son equivalentes en tablero 4×4 a depth=3 (Bonferroni). Esto no es una limitación del código sino una propiedad del ambiente: con AB a depth=4, el lookahead compensa ampliamente la calidad de la evaluación en las hojas.
+
+### 5. Anexos
+- Figuras adicionales (curvas de aprendizaje individuales, heatmap round-robin exploratorio)
+- Fragmentos de código relevante: clase `Discretizer`, regla de actualización Q, pseudocódigo Dyna-Q
+- No poner código completo — referir al repositorio GitHub
 
 ---
 
@@ -448,7 +488,7 @@ son útiles solo para mostrar el proceso iterativo de investigación.**
 
 ---
 
-## 6. PASO A PASO: CREAR EL PDF
+## 7. PASO A PASO: CREAR EL PDF
 
 ### Paso 1: Crear el documento
 Abrir Google Docs. Título: "Obligatorio IA 2026 — Red Destination™".  
@@ -502,22 +542,91 @@ File → Download → PDF Document (.pdf)
 Verificar que todas las imágenes se vean bien, las tablas no se corten.  
 Tamaño final esperado: 5-15 MB dependiendo de la calidad de imágenes.
 
-### Paso 10: Revisar checklist
-- [ ] Portada con nombres y números de estudiante
-- [ ] Sección LOST: discretización, Q-Learning, hiperparámetros, Dyna-Q
-- [ ] Sección MATE: Minimax+AB+impacto, Expectimax, heurísticas, experimento riguroso
-- [ ] Al menos 5 figuras
-- [ ] Tablas de resultados con estadísticas (mean ± std, CI95, success rate, p-valores)
-- [ ] Modelos .pkl mencionados y adjuntos en el ZIP
-- [ ] Declaración uso de IA
-- [ ] ≤ 20 páginas (sin contar anexos)
-- [ ] ZIP con todo: código .py, notebooks .ipynb, modelos .pkl, informe .pdf
-- [ ] **Agente final MATE correcto:** `MinimaxAgent(depth=4, heuristic=eval_mobility_only, use_alpha_beta=True)`
-- [ ] **Experimento riguroso referenciado:** `scripts/experiment_heuristics_rigorous.py` + CSVs en `models/mate/`
+### Paso 10: Armar el ZIP de entrega
+
+El ZIP debe llamarse `Obligatorio_Akerman_Kelmanson.zip` (o el nombre que pida la cátedra).
+
+**Estructura dentro del ZIP:**
+```
+Obligatorio_Akerman_Kelmanson/
+├── informe.pdf
+├── MountainCarContinuous/
+│   ├── q_learning_agent.py
+│   ├── dyna_q_agent.py
+│   ├── utils/discretization.py
+│   └── continuous_mountain_car.ipynb
+├── Isolation/
+│   ├── minimax_agent.py
+│   ├── expectimax_agent.py
+│   ├── heuristics.py
+│   ├── board.py, agent.py, isolation_env.py (cátedra)
+│   └── isolation.ipynb
+├── scripts/
+│   ├── train_lost.py
+│   ├── evaluate_mate.py
+│   ├── experiment_heuristics_rigorous.py
+│   └── generate_mate_figures.py
+└── models/
+    └── lost/
+        ├── qlearning_FINAL.pkl   ← OBLIGATORIO
+        └── dynaq_FINAL.pkl
+```
+
+**Qué NO incluir en el ZIP:** `.venv/`, `__pycache__/`, `models/lost/qlearning_bins_*.pkl` (exploración),
+`models/mate/*.csv` (opcionales, pero conveniente incluirlos como evidencia de experimentos).
+
+**Crear el ZIP:**
+```bash
+# Desde la carpeta padre de Obligatorio-Marzo-2026/
+zip -r Obligatorio_Akerman_Kelmanson.zip Obligatorio-Marzo-2026/ \
+  --exclude "*/\.venv/*" --exclude "*/__pycache__/*" --exclude "*/.git/*"
+```
+
+### Paso 11: Checklist final de auditoría
+
+**Entregables físicos:**
+- [ ] `informe.pdf` generado y ≤ 20 páginas (sin contar anexos)
+- [ ] ZIP armado con estructura correcta (ver Paso 10)
+- [ ] `models/lost/qlearning_FINAL.pkl` en el ZIP ← **OBLIGATORIO por la letra**
+- [ ] `models/lost/dynaq_FINAL.pkl` en el ZIP
+- [ ] Número de estudiante de Felipe Kelmanson completado en portada
+
+**Contenido LOST:**
+- [ ] Descripción del ambiente (obs space, reward, condición de éxito)
+- [ ] Discretización: tabla de 6 configuraciones + elección justificada
+- [ ] Q-Learning: ecuación Bellman, política ε-greedy, análisis q_init
+- [ ] Hiperparámetros α, γ (con cálculo 0.9^500), ε decay — tabla + figura por cada uno
+- [ ] Dyna-Q: algoritmo + sweep n_planning (curva no monótona explicada)
+- [ ] Resultados finales con tiempos: QL 94.14±0.63/100% (~25 min), DQ 89.41±0.30/100% (~10 min)
+
+**Contenido MATE:**
+- [ ] Descripción ambiente Isolation 4×4
+- [ ] Minimax + Alpha-Beta: algoritmo + tabla impacto (nodos y tiempos, incluyendo 45.6s pure d4)
+- [ ] Expectimax: diferencia conceptual + resultado riguroso (94% MM d3 vs EX d3, p≈0)
+- [ ] Heurísticas: tabla de las 5 implementadas + equivalencia estadística (Bonferroni)
+- [ ] Experimento riguroso: depth sweep (mob_only d4 67%, p=0.0007) + vs Stratagem (76%)
+- [ ] Agente final: `MinimaxAgent(depth=4, mob_only, AB=True)` con justificación
+
+**Apoyo visual (mínimo 5 figuras con caption):**
+- [ ] `ql_learning_curve.png` o `ql_vs_dq_comparison.png`
+- [ ] Al menos 1 figura de sweep LOST (alpha/gamma/epsilon/dyna)
+- [ ] `ab_impact.png`
+- [ ] `rigorous_depth_sweep.png` ★
+- [ ] `rigorous_minimax_vs_exp.png` ★ o `rigorous_vs_stratagem.png` ★
+
+**Advertencias y dificultades** ← exigido explícitamente por la letra:
+- [ ] q_init=0 no converge (y por qué se resolvió con q_init=1.0)
+- [ ] γ<0.99 hace la meta invisible (con el cálculo 0.9^500 ≈ 10⁻²³)
+- [ ] n_planning no monótono en Dyna-Q
+- [ ] Move Ordering más lento que AB solo (paradoja explicada)
+- [ ] Ventaja P1 73% en Isolation — cómo se mitigó con balanceo
+
+**Declaración uso de IA:**
+- [ ] Herramienta (Claude), contexto de uso, verificación por los autores
 
 ---
 
-## 6. ESTADO DE EXPERIMENTOS — TODOS COMPLETADOS ✅
+## 8. ESTADO DE EXPERIMENTOS — TODOS COMPLETADOS ✅
 
 | Experimento | Script | Estado | Resultados |
 |------------|--------|--------|------------|
@@ -531,7 +640,7 @@ Tamaño final esperado: 5-15 MB dependiendo de la calidad de imágenes.
 
 ---
 
-## 7. CHECKLIST DE CÓDIGO — CAMBIOS REALIZADOS
+## 9. CHECKLIST DE CÓDIGO — CAMBIOS REALIZADOS
 
 Los siguientes cambios de código fueron aplicados en esta sesión:
 
