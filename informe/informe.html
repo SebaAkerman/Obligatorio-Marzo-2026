@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Obligatorio IA 2026 — Red Destination™</title>
+<style>
+  @page { size: A4; margin: 2.2cm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: Calibri, Arial, "Helvetica Neue", sans-serif;
+    font-size: 11pt;
+    line-height: 1.15;
+    color: #1a1a1a;
+    max-width: 21cm;
+    margin: 0 auto;
+    padding: 0 1cm;
+  }
+  h1 { font-size: 18pt; page-break-before: always; border-bottom: 2px solid #333; padding-bottom: 4px; margin-top: 0.4em;}
+  h1:first-of-type { page-break-before: avoid; }
+  h2 { font-size: 14pt; margin-top: 1.3em; color: #1a1a1a; }
+  h3 { font-size: 12pt; margin-top: 1em; }
+  p { text-align: justify; margin: 0.5em 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 9.5pt; margin: 0.7em 0 1em 0; }
+  th, td { border: 1px solid #999; padding: 3px 6px; text-align: left; vertical-align: top; }
+  th { background: #e8e8e8; font-weight: 600; }
+  figure { margin: 1em 0; text-align: center; page-break-inside: avoid; }
+  figure img { width: 100%; max-width: 100%; border: 1px solid #ccc; }
+  figcaption { font-size: 9pt; color: #444; margin-top: 4px; font-style: italic; }
+  code, pre { font-family: "Courier New", monospace; font-size: 9pt; }
+  pre { background: #f4f4f4; border: 1px solid #ddd; padding: 8px; overflow-x: auto; white-space: pre-wrap; page-break-inside: avoid; }
+  .formula { text-align: center; font-size: 12pt; margin: 0.8em 0; font-family: "Cambria Math", Cambria, serif; }
+  .nobreak { page-break-inside: avoid; }
+  .small { font-size: 9.5pt; color: #333; }
+  .cover {
+    height: 26cm;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    page-break-after: always;
+  }
+  .cover h1 { border: none; page-break-before: avoid; font-size: 26pt; margin-bottom: 0.2em; }
+  .cover h2 { border: none; font-weight: normal; font-size: 16pt; color: #555; margin-top: 0; }
+  .cover .subtitle { font-size: 13pt; color: #777; margin-top: 0.3em; margin-bottom: 2.5em; }
+  .cover table { width: 70%; margin: 1.5em auto; font-size: 11pt; }
+  .cover table th, .cover table td { text-align: center; border: 1px solid #aaa; padding: 6px 10px; }
+  .cover .footer-info { margin-top: 3em; font-size: 10.5pt; color: #555; }
+  .badge { display:inline-block; padding:1px 6px; border-radius:4px; font-size:9pt; font-weight:600; }
+  .badge-ok { background:#d4edda; color:#155724; }
+  .badge-warn { background:#fff3cd; color:#856404; }
+  .badge-bad { background:#f8d7da; color:#721c24; }
+  .toc { margin: 1em 0; }
+  .toc ul { list-style: none; padding-left: 0.5em; }
+  .toc li { margin: 0.2em 0; }
+  .toc a { text-decoration: none; color: #1a1a1a; }
+  .ai-box { border: 1px solid #999; background: #f8f8f8; padding: 10px 14px; margin: 1em 0; font-size: 10.5pt; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- PORTADA                                                       -->
+<!-- ============================================================ -->
+<div class="cover">
+  <h1>Obligatorio IA 2026</h1>
+  <h2>Red Destination™</h2>
+  <div class="subtitle">Proyecto LOST (Q-Learning &amp; Dyna-Q) y Proyecto MATE (Minimax / Expectimax)</div>
+
+  <table>
+    <tr><th>Integrante</th><th>Número de estudiante</th></tr>
+    <tr><td>Sebastian Akerman</td><td>282163</td></tr>
+    <tr><td>Felipe Kelmanzon</td><td>282212</td></tr>
+  </table>
+
+  <div class="footer-info">
+    <strong>Materia:</strong> Inteligencia Artificial<br>
+    <strong>Carrera:</strong> Ingeniería en Sistemas<br>
+    <strong>Universidad ORT Uruguay — Facultad de Ingeniería</strong><br>
+    <strong>Fecha de entrega:</strong> 06/07/2026
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECCIÓN 1: PROYECTO LOST                                      -->
+<!-- ============================================================ -->
+<h1 id="lost">1. Proyecto LOST — Aprendizaje por Refuerzo (Q-Learning)</h1>
+
+<h2>1.1 Descripción del ambiente</h2>
+<p>
+El proyecto LOST utiliza el ambiente <strong>MountainCarContinuous-v0</strong> de Gymnasium. Un auto (nuestro
+rover) se encuentra en un valle entre dos colinas y debe llegar a la bandera ubicada en la cima de la colina
+derecha. El motor del auto no es lo suficientemente fuerte para subir directamente, por lo que el agente debe
+aprender a generar impulso, retrocediendo y avanzando alternadamente.
+</p>
+<table>
+  <tr><th>Elemento</th><th>Descripción</th></tr>
+  <tr><td>Espacio de observación</td><td><code>Box(2,)</code>: posición <em>x</em> ∈ [-1.2, 0.6], velocidad <em>v</em> ∈ [-0.07, 0.07]</td></tr>
+  <tr><td>Espacio de acciones</td><td><code>Box(1,)</code>: fuerza continua <em>a</em> ∈ [-1.0, 1.0]</td></tr>
+  <tr><td>Recompensa por paso</td><td><code>r = -0.1·a²</code> (penaliza el uso de fuerza)</td></tr>
+  <tr><td>Recompensa por meta</td><td><code>+100</code> al alcanzar <em>x</em> ≥ 0.45</td></tr>
+  <tr><td>Fin de episodio</td><td><code>terminated=True</code> (éxito, llegó a la meta) o <code>truncated=True</code> (máx. 999 pasos)</td></tr>
+</table>
+<p>
+El desafío central de este ambiente es que la recompensa es <strong>esparsa y mayormente negativa</strong>:
+mientras el agente no alcance la meta, todo lo que recibe son penalizaciones por usar fuerza. Esto puede
+inducir a un agente mal inicializado a aprender que "no moverse" (<em>a</em> ≈ 0) es la política óptima,
+quedando atrapado en un mínimo local — problema que se analiza en profundidad en la Sección 4.
+</p>
+
+<h2>1.2 Discretización de observaciones y acciones</h2>
+<p>
+Dado que Q-Learning tabular requiere un espacio de estados y acciones discreto y finito, se implementó la
+clase <code>Discretizer</code> (<code>utils/discretization.py</code>), que:
+</p>
+<ul>
+  <li>Genera grillas uniformes con <code>np.linspace</code> para posición (<code>n_pos_bins</code>) y velocidad (<code>n_vel_bins</code>) dentro de sus rangos válidos.</li>
+  <li>Convierte una observación continua <code>(x, v)</code> en un índice de estado discreto <code>(x_bin, vel_bin)</code> mediante <code>np.digitize</code>.</li>
+  <li>Genera <code>n_actions</code> valores de fuerza uniformemente distribuidos en [-1, 1], y mapea el índice de acción discreto elegido por la política a la acción continua que espera <code>env.step()</code>.</li>
+</ul>
+<p>
+Se exploraron <strong>seis configuraciones</strong> de discretización, entrenando 5.000 episodios con los
+mismos hiperparámetros de aprendizaje (α=0.2, γ=0.99, ε₀=1.0, decay=0.9995, ε_min=0.05, q_init=1.0):
+</p>
+<table>
+  <tr><th>Configuración</th><th>Bins (pos × vel)</th><th>N° acciones</th><th>Espacio de estados</th><th>Reward medio</th><th>Tasa de éxito</th></tr>
+  <tr><td>10×10 / 5 acc.</td><td>10×10</td><td>5</td><td>605</td><td>86.1</td><td>95%</td></tr>
+  <tr><td>10×10 / 10 acc.</td><td>10×10</td><td>10</td><td>1.210</td><td>76.3</td><td>90%</td></tr>
+  <tr><td>20×20 / 10 acc.</td><td>20×20</td><td>10</td><td>4.410</td><td>85.4</td><td>95%</td></tr>
+  <tr><td>20×20 / 15 acc.</td><td>20×20</td><td>15</td><td>6.615</td><td>92.2</td><td>100%</td></tr>
+  <tr><td><strong>30×30 / 15 acc.</strong></td><td><strong>30×30</strong></td><td><strong>15</strong></td><td>14.415</td><td><strong>93.7</strong></td><td><strong>100%</strong></td></tr>
+  <tr><td>30×30 / 20 acc.</td><td>30×30</td><td>20</td><td>19.220</td><td>93.8</td><td>100%</td></tr>
+</table>
+<p class="small">
+El espacio de estados crece como O(bins²×acciones), pero la representación <em>útil</em> crece más lento
+porque muchos estados nunca se visitan. Bins de 10×10 producen <em>aliasing</em> (estados físicamente
+distintos colapsan al mismo bin), perdiendo la resolución necesaria cerca de la meta. Acciones=5 discretiza
+la fuerza de forma demasiado gruesa. <strong>Elección final: 30×30 bins, 15 acciones</strong> — mejor reward
+con un espacio de estados todavía manejable; 20 acciones agrega exploración redundante sin mejora apreciable.
+</p>
+
+<h2>1.3 Q-Learning</h2>
+<p>
+Se implementó <code>QLearningAgent</code> (<code>q_learning_agent.py</code>), un agente Q-Learning tabular
+con tabla <code>Q</code> de forma <code>(n_pos_bins+1, n_vel_bins+1, n_actions)</code> y política
+ε-greedy. La regla de actualización (Sutton &amp; Barto, ec. 6.8) es:
+</p>
+<div class="formula">Q(s, a) ← Q(s, a) + α · [ r + γ · max<sub>a'</sub> Q(s', a') − Q(s, a) ]</div>
+<p>
+La exploración se controla con ε-greedy: con probabilidad ε se elige una acción aleatoria, y con
+probabilidad 1-ε la acción de mayor valor Q. ε decae multiplicativamente cada episodio
+(<code>epsilon ← max(epsilon_min, epsilon · decay)</code>), permitiendo que el agente explore mucho al
+inicio y explote su política aprendida hacia el final.
+</p>
+<p>
+Un parámetro adicional, <code>q_init</code>, controla el valor inicial de toda la tabla Q. Como se detalla
+en la Sección 4, <strong>la inicialización optimista (q_init=1.0) resultó ser crítica</strong> para que el
+agente no quede atrapado en la política trivial "fuerza = 0".
+</p>
+
+<figure>
+  <img src="../reports/figures/ql_learning_curve.png" alt="Curva de aprendizaje Q-Learning">
+  <figcaption>Figura 1: Curva de aprendizaje de Q-Learning (q_init=1.0, 20×20 bins, 15 acciones, 10.000 episodios).
+  Primer episodio exitoso en el episodio 732; la media móvil de 100 episodios supera 50 puntos en el episodio 2.368;
+  la política se estabiliza a partir del episodio ~5.000.</figcaption>
+</figure>
+
+<h2>1.4 Búsqueda de hiperparámetros</h2>
+<p>
+Sobre la configuración 30×30 bins / 15 acciones / q_init=1.0, se realizó una búsqueda sistemática de
+α (tasa de aprendizaje), γ (factor de descuento) y la velocidad de decaimiento de ε. Cada configuración se
+evaluó con <code>test_agent</code> (política greedy pura, ε=0) tras el entrenamiento.
+</p>
+
+<h3>α (alpha) — tasa de aprendizaje</h3>
+<table>
+  <tr><th>α</th><th>Reward medio</th><th>Tasa de éxito</th><th>Observación</th></tr>
+  <tr><td>0.05</td><td>61.2</td><td>66%</td><td>Aprende demasiado lento; no converge en el presupuesto de episodios</td></tr>
+  <tr><td>0.10</td><td>92.9</td><td>100%</td><td>Buen desempeño</td></tr>
+  <tr><td><strong>0.20</strong></td><td><strong>93.9</strong></td><td><strong>100%</strong></td><td><strong>Óptimo</strong></td></tr>
+  <tr><td>0.30</td><td>-36.5</td><td>0%</td><td>La Q-table diverge: actualizaciones demasiado agresivas desestabilizan los valores aprendidos</td></tr>
+  <tr><td>0.50</td><td>84.9</td><td>96%</td><td>Inestable, oscila</td></tr>
+</table>
+<figure>
+  <img src="../reports/figures/alpha_search.png" alt="Búsqueda de alpha">
+  <figcaption>Figura 2: Reward final vs. α. α=0.2 maximiza el reward; α≥0.3 provoca divergencia de la tabla Q.</figcaption>
+</figure>
+
+<h3>γ (gamma) — factor de descuento</h3>
+<p>
+Este hiperparámetro produjo el hallazgo más relevante del proyecto LOST. La meta se alcanza, en promedio,
+a unos 500 pasos del inicio del episodio. La señal de recompensa <code>+100</code> debe propagarse hacia
+atrás, descontada por γ elevado a la distancia en pasos:
+</p>
+<table>
+  <tr><th>γ</th><th>Tasa de éxito</th><th>Reward medio</th><th>Explicación</th></tr>
+  <tr><td>0.90</td><td>0%</td><td>0.00</td><td>0.9⁵⁰⁰ ≈ 10⁻²³ → la recompensa de la meta es matemáticamente invisible para el TD-update</td></tr>
+  <tr><td>0.95</td><td>0%</td><td>0.00</td><td>0.95⁵⁰⁰ ≈ 5.15×10⁻¹² → igualmente invisible</td></tr>
+  <tr><td><strong>0.99</strong></td><td><strong>100%</strong></td><td><strong>93.90</strong></td><td><strong>Óptimo</strong>: 0.99⁵⁰⁰ ≈ 0.0066, suficiente para propagar la señal</td></tr>
+  <tr><td>0.999</td><td>94%</td><td>88.22</td><td>Sobreestima estados remotos, ligera degradación</td></tr>
+</table>
+<figure>
+  <img src="../reports/figures/gamma_search.png" alt="Búsqueda de gamma">
+  <figcaption>Figura 3: Tasa de éxito vs. γ. Con γ ≤ 0.95 el agente nunca aprende a llegar a la meta — el descuento
+  hace que la recompensa terminal valga, en la práctica, cero en cualquier estado lejano.</figcaption>
+</figure>
+
+<h3>Decaimiento de ε</h3>
+<table>
+  <tr><th>Decay</th><th>ε final (15k eps)</th><th>Reward medio</th><th>Tasa de éxito</th></tr>
+  <tr><td>0.9990</td><td>0.050</td><td>91.81</td><td>100%</td></tr>
+  <tr><td><strong>0.9995</strong></td><td><strong>0.082</strong></td><td><strong>94.74</strong></td><td><strong>100%</strong></td></tr>
+  <tr><td>0.9997</td><td>0.223</td><td>87.60</td><td>98%</td></tr>
+  <tr><td>0.9999</td><td>0.607</td><td>74.58</td><td>84%</td></tr>
+</table>
+<figure>
+  <img src="../reports/figures/epsilon_decay_search.png" alt="Búsqueda de epsilon decay">
+  <figcaption>Figura 4: Reward final vs. velocidad de decaimiento de ε. decay=0.9995 logra el mejor balance
+  exploración/explotación; decay=0.9999 deja a ε demasiado alto al final del entrenamiento, por lo que el
+  agente sigue actuando subóptimamente incluso tras converger.</figcaption>
+</figure>
+
+<h3>Hiperparámetros finales elegidos</h3>
+<table>
+  <tr><th>Parámetro</th><th>Valor</th><th>Justificación</th></tr>
+  <tr><td>Bins (pos × vel)</td><td>30 × 30</td><td>Mejor representación del estado continuo sin explosión del espacio</td></tr>
+  <tr><td>N° acciones</td><td>15</td><td>Precisión suficiente; 20 no aporta mejora</td></tr>
+  <tr><td>α</td><td>0.2</td><td>Máximo reward sin divergencia</td></tr>
+  <tr><td>γ</td><td>0.99</td><td>Necesario para que la meta sea "visible" a ~500 pasos</td></tr>
+  <tr><td>ε₀ / decay / ε_min</td><td>1.0 / 0.9995 / 0.05</td><td>Balance exploración/explotación</td></tr>
+  <tr><td>q_init</td><td>1.0</td><td>Inicialización optimista — evita la política trivial "fuerza=0" (ver Sección 4)</td></tr>
+</table>
+
+<h2>1.5 Componente de investigación: Dyna-Q</h2>
+<p>
+Siguiendo los capítulos 8.1 y 8.2 de <em>Reinforcement Learning: An Introduction</em> (Sutton &amp; Barto),
+se implementó <code>DynaQAgent</code> (<code>dyna_q_agent.py</code>), que extiende Q-Learning integrando
+<strong>actuación, aprendizaje y planificación</strong>. Por cada paso real <code>(s, a, r, s')</code>:
+</p>
+<ol>
+  <li><strong>Actualización real:</strong> se aplica la misma regla de Bellman que Q-Learning sobre la transición observada.</li>
+  <li><strong>Actualización del modelo:</strong> se guarda <code>Model(s,a) ← (r, s')</code> (modelo determinista, tabular).</li>
+  <li><strong>Planificación simulada:</strong> se repiten <code>n</code> veces los siguientes pasos:
+    <ul>
+      <li>Samplear aleatoriamente un par <code>(s̃, ã)</code> visitado anteriormente.</li>
+      <li>Recuperar <code>(r̃, s̃')</code> del modelo.</li>
+      <li>Aplicar la actualización de Q sobre esta experiencia simulada.</li>
+    </ul>
+  </li>
+</ol>
+<p>
+Con <code>n=0</code>, Dyna-Q se reduce exactamente a Q-Learning puro. El parámetro <code>n_planning_steps</code>
+controla cuánta "experiencia simulada" extra se reutiliza por cada paso real, acelerando la propagación de
+información hacia atrás sin necesidad de más interacción con el ambiente.
+</p>
+
+<h3>Sweep de n_planning_steps</h3>
+<p>
+Se entrenaron 6 configuraciones (n ∈ {0,1,5,10,20,50}) con los mismos hiperparámetros
+(20×20 bins, 15 acciones, α=0.2, γ=0.99, decay=0.9995, q_init=0, 3.000 episodios) mediante
+<code>scripts/experiment_dyna_planning.py</code>:
+</p>
+<table>
+  <tr><th>n_planning</th><th>Reward medio</th><th>Tasa de éxito</th><th>1er éxito</th><th>Tiempo de entrenamiento</th></tr>
+  <tr><td>0 (= Q-Learning puro)</td><td>0.00</td><td>0%</td><td>ep 17 (no converge)</td><td>59 s</td></tr>
+  <tr><td>1</td><td>0.00</td><td>0%</td><td>nunca</td><td>69 s</td></tr>
+  <tr><td>5</td><td>0.00</td><td>0%</td><td>nunca</td><td>101 s</td></tr>
+  <tr><td><strong>10</strong></td><td><strong>39.97</strong></td><td><strong>66%</strong></td><td><strong>ep 51</strong></td><td>120 s</td></tr>
+  <tr><td>20</td><td>-28.94</td><td>18%</td><td>ep 47</td><td>199 s</td></tr>
+  <tr><td>50</td><td>0.00</td><td>0%</td><td>nunca</td><td>420 s</td></tr>
+</table>
+<figure>
+  <img src="../reports/figures/dyna_planning_sweep.png" alt="Sweep de n_planning en Dyna-Q">
+  <figcaption>Figura 5: Curvas de aprendizaje para n_planning ∈ {0,1,5,10,20,50} (3.000 episodios, q_init=0).
+  La relación entre n y el desempeño es <strong>no monótona</strong>: n=10 es el único valor que logra que
+  el agente encuentre la meta de forma consistente en este presupuesto de episodios.</figcaption>
+</figure>
+<p>
+<strong>Hallazgo central:</strong> más planificación no es siempre mejor. Con n&lt;10 el modelo aprendido es
+demasiado pobre y la planificación no alcanza a propagar el valor de la meta. Con n=10 se logra el balance
+óptimo (66% de éxito a 3.000 episodios, 100% al extender a 5.000). Con n=20, el agente <em>refuerza</em>
+valores Q incorrectos sobre un modelo todavía escaso, generando una política subóptima de la que cuesta
+escapar (caída a 18%). Con n=50, cada episodio es ~7× más lento y el modelo sigue siendo insuficientemente
+denso (0%). El n óptimo depende del presupuesto de episodios reales y de cuán denso esté el modelo aprendido
+en ese punto del entrenamiento.
+</p>
+
+<figure>
+  <img src="../reports/figures/ql_vs_dq_comparison.png" alt="Comparación Q-Learning vs Dyna-Q">
+  <figcaption>Figura 6: Comparación de las curvas de aprendizaje (media móvil de 100 episodios) durante los
+  primeros 5.000 episodios. Dyna-Q (n=10) converge mucho más rápido que Q-Learning puro gracias a la
+  planificación simulada.</figcaption>
+</figure>
+
+<h2>1.6 Evaluación final y conclusiones — Proyecto LOST</h2>
+<p>
+Evaluación con 100 episodios (política greedy, ε=0) sobre los modelos finales entrenados:
+</p>
+<table>
+  <tr><th>Modelo</th><th>Configuración</th><th>Reward medio</th><th>Std</th><th>IC 95%</th><th>Éxito</th><th>Tiempo de entrenamiento</th></tr>
+  <tr><td><strong>Q-Learning FINAL</strong></td><td>30×30 bins, 15 acc., 15.000 eps, q_init=1.0, α=0.2, γ=0.99, decay=0.9995</td><td><strong>94.14</strong></td><td>0.63</td><td>±0.12</td><td><strong>100%</strong></td><td>~5 min</td></tr>
+  <tr><td><strong>Dyna-Q FINAL</strong></td><td>20×20 bins, 15 acc., n_planning=10, 5.000 eps, q_init=0, α=0.2, γ=0.99, decay=0.9995</td><td><strong>89.41</strong></td><td>0.30</td><td>±0.06</td><td><strong>100%</strong></td><td>~4 min</td></tr>
+  <tr><td>Q-Learning multi-seed (3 seeds)</td><td>ídem Q-Learning FINAL, seeds 0/1/2</td><td>93.02</td><td>0.97 (entre seeds)</td><td>—</td><td>100%</td><td>~5 min/seed</td></tr>
+</table>
+<p class="small">Modelos entregados: <code>models/lost/qlearning_FINAL.pkl</code> y <code>models/lost/dynaq_FINAL.pkl</code>.</p>
+
+<p>
+<strong>Conclusiones:</strong>
+</p>
+<ul>
+  <li><strong>Q-Learning</strong> alcanza el mejor reward final (94.14) entrenando con más episodios (15k) y aprovechando la inicialización optimista.</li>
+  <li><strong>Dyna-Q</strong> converge con <strong>3 veces menos episodios</strong> (5k vs 15k) y presenta una varianza notablemente menor (std=0.30 vs 0.63), gracias a la planificación simulada que reutiliza experiencia pasada.</li>
+  <li><strong>Trade-off:</strong> Dyna-Q es preferible cuando el costo de interactuar con el ambiente real es alto (menos episodios necesarios); Q-Learning, con suficiente presupuesto de episodios y una buena inicialización, alcanza un desempeño levemente superior.</li>
+  <li>Ambos algoritmos logran <strong>100% de tasa de éxito</strong> en la tarea de llegar a la meta, cumpliendo el objetivo del proyecto: "que el rover aprenda que avanzar suele ser mejor que no hacerlo".</li>
+</ul>
+
+<!-- ============================================================ -->
+<!-- SECCIÓN 2: PROYECTO MATE                                      -->
+<!-- ============================================================ -->
+<h1 id="mate">2. Proyecto MATE — Minimax / Expectimax (Isolation)</h1>
+
+<h2>2.1 Descripción del ambiente</h2>
+<p>
+El proyecto MATE utiliza un simulador del juego de mesa <strong>Isolation</strong> sobre un tablero de
+<strong>4×4</strong> (<code>Board</code> en <code>board.py</code>, expuesto vía <code>IsolationEnv</code>).
+Dos jugadores ocupan celdas distintas y se mueven alternadamente. En cada turno, un jugador:
+</p>
+<ol>
+  <li>Se mueve a una celda adyacente libre (8 direcciones posibles), y</li>
+  <li>Destruye (inutiliza) una celda vacía cualquiera del tablero.</li>
+</ol>
+<p>
+Una acción es entonces el par <code>(dirección, celda_a_destruir)</code>. Un jugador <strong>pierde</strong>
+cuando, en su turno, no tiene ningún movimiento válido disponible. El factor de ramificación es alto para
+un tablero tan pequeño: hasta <strong>~96 acciones posibles</strong> por nodo (8 direcciones × hasta 12
+celdas vacías destruibles), lo que hace que el árbol de búsqueda crezca muy rápido con la profundidad.
+</p>
+
+<h2>2.2 Minimax con Alpha-Beta Pruning</h2>
+<p>
+Se implementó <code>MinimaxAgent</code> (<code>minimax_agent.py</code>), que asume que ambos jugadores
+juegan de forma óptima:
+</p>
+<ul>
+  <li><strong>Nodos Max</strong> (nuestro agente): eligen la acción que maximiza la utilidad.</li>
+  <li><strong>Nodos Min</strong> (el oponente): eligen la acción que minimiza la utilidad desde la
+  perspectiva de nuestro agente.</li>
+  <li>Si el nodo es terminal, la utilidad es <code>+∞</code> si ganamos o <code>-∞</code> si perdemos. Si se
+  alcanza la profundidad máxima sin terminar, se evalúa el estado con una función heurística (Sección 2.4).</li>
+</ul>
+<p>
+<strong>Alpha-Beta Pruning</strong> mantiene dos cotas durante el recorrido: α (la mejor garantía que Max
+puede asegurarse hasta el momento) y β (la mejor garantía de Min). Una rama se poda cuando:
+</p>
+<ul>
+  <li>En un nodo Max, el valor parcial ≥ β → el padre Min nunca elegiría llegar aquí (poda β).</li>
+  <li>En un nodo Min, el valor parcial ≤ α → el padre Max nunca elegiría llegar aquí (poda α).</li>
+</ul>
+<p>
+Esto reduce la complejidad de O(b<sup>d</sup>) a, en el mejor caso, O(b<sup>d/2</sup>) sin afectar el
+resultado: Alpha-Beta siempre devuelve la <em>misma</em> acción que Minimax puro, solo evita explorar ramas
+irrelevantes. Adicionalmente se implementó <strong>Move Ordering</strong> opcional
+(<code>use_move_ordering=True</code>): antes de expandir, las acciones se ordenan según su valor heurístico,
+de forma que las mejores jugadas se evalúen primero — esto ajusta α/β más rápido y, en teoría, poda más ramas.
+</p>
+
+<h3>Impacto medido (50 partidas completas por configuración)</h3>
+<table>
+  <tr><th>Profundidad</th><th>Minimax puro</th><th>Alpha-Beta</th><th>Alpha-Beta + Move Ordering</th></tr>
+  <tr><td>2</td><td>3.608 nodos / 0.143 s</td><td>795 nodos / 0.031 s (-78%)</td><td>286 nodos / 0.138 s (-92%)</td></tr>
+  <tr><td>3</td><td>91.153 nodos / 3.178 s</td><td>8.752 nodos / 0.304 s (-90%)</td><td>2.341 nodos / 0.438 s (-97%)</td></tr>
+  <tr><td><strong>4</strong></td><td><strong>1.586.170 nodos / 45.6 s</strong></td><td>40.688 nodos / 1.15 s (-97%)</td><td>5.526 nodos / 1.94 s (-99.7%)</td></tr>
+</table>
+<figure>
+  <img src="../reports/figures/ab_impact.png" alt="Impacto de Alpha-Beta Pruning">
+  <figcaption>Figura 7: Nodos expandidos y tiempo por partida — Minimax puro vs. Alpha-Beta vs. Alpha-Beta + Move
+  Ordering, para profundidades 2, 3 y 4 (50 partidas/configuración vs. RandomAgent).</figcaption>
+</figure>
+<p>
+<strong>Conclusiones:</strong>
+</p>
+<ul>
+  <li>A profundidad 4, Minimax puro tarda <strong>45.6 segundos por partida</strong> — completamente inviable
+  en tiempo real (14× más lento que profundidad 3). <strong>Alpha-Beta es obligatorio para depth ≥ 4</strong>:
+  reduce los nodos un 97% y el tiempo a 1.15 s/partida, un agente jugable.</li>
+  <li><strong>La paradoja del Move Ordering:</strong> aunque reduce un 99.7% los nodos (vs. 97% de AB solo), el
+  tiempo de pared es <em>mayor</em> (1.94 s vs. 1.15 s). El costo de evaluar la heurística para ordenar cada
+  acción (una llamada extra a <code>h_mobility</code> por acción, en cada nodo) supera el beneficio de la poda
+  adicional cuando la heurística es tan barata como <code>h_mobility</code> (O(1)). Move Ordering sería más
+  rentable con heurísticas costosas como <code>h_territory</code> o <code>h_future_mobility</code>.</li>
+  <li>El agente final (Sección 2.6) usa <strong>Alpha-Beta sin Move Ordering</strong>, por ser la
+  configuración más eficiente con la heurística elegida.</li>
+</ul>
+
+<h2>2.3 Expectimax</h2>
+<p>
+Se implementó <code>ExpectimaxAgent</code> (<code>expectimax_agent.py</code>), que difiere de Minimax en
+los nodos del oponente: en lugar de un nodo Min (oponente óptimo), se usa un <strong>nodo de azar</strong>
+que calcula la <em>esperanza</em> de los valores de los hijos, asumiendo que el oponente elige sus acciones
+con distribución uniforme:
+</p>
+<div class="formula">
+Expectimax(s) =<br>
+&nbsp;&nbsp;U(s) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;si <em>s</em> es terminal<br>
+&nbsp;&nbsp;max<sub>a</sub> Expectimax(suc(s,a)) &nbsp;&nbsp;&nbsp;si jugador(s) = Max<br>
+&nbsp;&nbsp;Σ<sub>a</sub> P(a)·Expectimax(suc(s,a)) &nbsp;&nbsp;si jugador(s) = Azar (oponente), con P(a) = 1/|acciones|
+</div>
+<p>
+<strong>Cuándo conviene cada técnica:</strong> Minimax es conservador — asume el peor caso (oponente óptimo).
+Expectimax es más optimista — adecuado cuando el oponente es aleatorio o subóptimo. Para decidir cuál usar en
+MATE se realizó un experimento riguroso (100 partidas balanceadas: 50 como P1 + 50 como P2, test binomial):
+</p>
+<table>
+  <tr><th>Enfrentamiento</th><th>Win rate Minimax</th><th>p-valor</th><th>Conclusión</th></tr>
+  <tr><td>Minimax depth=2 vs Expectimax depth=2</td><td>38%</td><td>0.0164</td><td>Expectimax gana — a poca profundidad el oponente "no se ve venir"</td></tr>
+  <tr><td><strong>Minimax depth=3 vs Expectimax depth=3</strong></td><td><strong>94%</strong></td><td><strong>0.0000</strong></td><td><strong>Minimax aplasta</strong> — el rival real (otro Minimax) juega cerca del óptimo</td></tr>
+  <tr><td>Minimax depth=3 vs Expectimax depth=4</td><td>58%</td><td>0.1096</td><td>n.s. — un nivel extra de profundidad casi equipara a Expectimax</td></tr>
+</table>
+<figure>
+  <img src="../reports/figures/rigorous_minimax_vs_exp.png" alt="Minimax vs Expectimax">
+  <figcaption>Figura 8: Win rate de Minimax-AB vs. Expectimax a distintas profundidades, con intervalos de
+  confianza. A depth=3 (la profundidad usada en los torneos), Minimax es claramente superior.</figcaption>
+</figure>
+<p>
+<strong>Conclusión:</strong> dado que el oponente real es otro agente que busca jugar bien (otro Minimax o
+<code>Stratagem</code>), la suposición de Expectimax (oponente uniforme/aleatorio) es <strong>incorrecta</strong>
+en este dominio. <strong>Minimax con Alpha-Beta es la técnica elegida</strong> para el agente final.
+Expectimax solo sería preferible contra oponentes genuinamente aleatorios o subóptimos.
+</p>
+
+<h2>2.4 Funciones de evaluación heurística</h2>
+<p>
+Se implementaron las siguientes heurísticas primitivas (<code>heuristics.py</code>), todas con la firma
+<code>h(board, player) → float</code>, donde valores positivos favorecen a <code>player</code>:
+</p>
+<table>
+  <tr><th>Heurística</th><th>Fórmula</th><th>Costo</th></tr>
+  <tr><td><code>h_mobility</code></td><td>movimientos propios − movimientos del oponente</td><td>O(1)</td></tr>
+  <tr><td><code>h_center_proximity</code></td><td>(dist_oponente − dist_propia) / dist_máx al centro</td><td>O(1)</td></tr>
+  <tr><td><code>h_open_cells</code></td><td>(acciones propias − acciones oponente) / total (normalizado, [-1,1])</td><td>O(1)</td></tr>
+  <tr><td><code>h_future_mobility</code></td><td>promedio de movilidad propia tras 1 jugada − ídem oponente</td><td>~20× h_mobility</td></tr>
+  <tr><td><code>h_territory</code></td><td>BFS: celdas vacías alcanzables propias − del oponente</td><td>~1.8× h_mobility</td></tr>
+</table>
+<p class="small">
+Nota: <code>h_open_cells</code> usa la misma señal subyacente que <code>h_mobility</code>
+(<code>get_possible_actions</code>), solo que normalizada — no aporta información independiente.
+</p>
+<p>Y las siguientes funciones de evaluación <strong>compuestas</strong>, combinando heurísticas con distintos pesos:</p>
+<table>
+  <tr><th>Función</th><th>Fórmula</th></tr>
+  <tr><td><code>eval_mobility_only</code></td><td><code>h_mobility</code></td></tr>
+  <tr><td><code>eval_mobility_center</code></td><td>0.7 · h_mobility + 0.3 · h_center_proximity</td></tr>
+  <tr><td><code>eval_full</code></td><td>0.6 · h_mobility + 0.2 · h_center_proximity + 0.2 · h_open_cells</td></tr>
+  <tr><td><code>eval_territory</code></td><td><code>h_territory</code></td></tr>
+  <tr><td><code>eval_mobility_territory</code></td><td>0.6 · h_mobility + 0.4 · h_territory</td></tr>
+</table>
+
+<h3>Experimento riguroso de comparación de heurísticas</h3>
+<p>
+Para decidir objetivamente cuál heurística usar, se diseñó un <strong>round-robin completo</strong> entre las
+5 funciones de evaluación: C(5,2)=10 pares, <strong>100 partidas balanceadas por par</strong> (50 como P1 +
+50 como P2), Minimax-AB, depth=3. Se aplicó un test binomial de dos colas por par
+(H₀: win_rate = 0.5) con <strong>corrección de Bonferroni</strong> (α_ajustado = 0.05/10 = 0.005), lo que da
+una potencia estadística ~94% para detectar diferencias ≥10%.
+</p>
+<table>
+  <tr><th>Heurística</th><th>Wins / Games</th><th>Win Rate</th><th>IC Wilson 95%</th><th>p-valor (mejor par)</th></tr>
+  <tr><td>mobility_territory</td><td>214 / 400</td><td>53.5%</td><td>[0.486, 0.583]</td><td>0.1096 (n.s.)</td></tr>
+  <tr><td>full</td><td>212 / 400</td><td>53.0%</td><td>[0.481, 0.578]</td><td>0.2301 (n.s.)</td></tr>
+  <tr><td>territory</td><td>196 / 400</td><td>49.0%</td><td>[0.441, 0.539]</td><td>0.3173 (n.s.)</td></tr>
+  <tr><td>mobility_only</td><td>189 / 400</td><td>47.2%</td><td>[0.424, 0.521]</td><td>0.1096 (n.s.)</td></tr>
+  <tr><td>mobility_center</td><td>189 / 400</td><td>47.2%</td><td>[0.424, 0.521]</td><td>0.5485 (n.s.)</td></tr>
+</table>
+<figure>
+  <img src="../reports/figures/rigorous_roundrobin.png" alt="Round-robin riguroso de heurísticas">
+  <figcaption>Figura 9: Resultados del round-robin riguroso (100 partidas/par) con intervalos de confianza
+  Wilson 95% y matriz de enfrentamientos. Ningún par presenta diferencia estadísticamente significativa tras
+  la corrección de Bonferroni.</figcaption>
+</figure>
+<p>
+<strong>Conclusión:</strong> ninguno de los 10 pares supera el umbral α=0.005 post-Bonferroni — las
+<strong>5 heurísticas son estadísticamente equivalentes</strong> en un tablero 4×4 a profundidad 3. Por lo
+tanto, se elige <strong><code>eval_mobility_only</code></strong> como heurística final: es la más simple
+(una resta), la más rápida (O(1)) y, según los datos, no existe penalización medible por no usar una
+heurística más compleja.
+</p>
+
+<h2>2.5 Experimentación y torneos</h2>
+<p>
+Resumen del diseño experimental completo. Todos los torneos balancean los roles P1/P2 (ver Sección 4 sobre
+la ventaja del primer jugador) y se evalúan con test binomial + IC Wilson 95% (corrección de Bonferroni
+cuando hay comparaciones múltiples):
+</p>
+<table>
+  <tr><th>Experimento</th><th>Objetivo</th><th>Metodología</th><th>N</th></tr>
+  <tr><td>Pure vs AB vs AB+MO</td><td>Cuantificar impacto de Alpha-Beta</td><td>Nodos + tiempo + win% vs Random</td><td>50/config</td></tr>
+  <tr><td>Minimax vs Expectimax</td><td>Decidir qué técnica usar</td><td>Match balanceado, test binomial</td><td>100/matchup</td></tr>
+  <tr><td>Round-robin de heurísticas</td><td>Comparar funciones de evaluación</td><td>Round-robin balanceado + Bonferroni</td><td>100/par</td></tr>
+  <tr><td>Sweep depth × heurística</td><td>¿La profundidad compensa la heurística?</td><td>vs. baseline mob_only depth=3</td><td>100/config</td></tr>
+  <tr><td>Agente final vs Stratagem</td><td>Benchmark externo (agente de cátedra)</td><td>Match balanceado</td><td>100</td></tr>
+  <tr><td>Agente final vs Random</td><td>Confirmar dominancia básica</td><td>Match balanceado</td><td>100</td></tr>
+  <tr><td>Mirror match (d4 vs d4)</td><td>Cuantificar ventaja de P1 a la profundidad final</td><td>Sin balanceo de roles</td><td>100</td></tr>
+</table>
+
+<h3>Impacto de la profundidad de búsqueda</h3>
+<table>
+  <tr><th>Depth</th><th>Win% vs Random</th><th>Nodos promedio/partida</th></tr>
+  <tr><td>2</td><td>100%</td><td>3.038</td></tr>
+  <tr><td>3</td><td>99%</td><td>23.368</td></tr>
+  <tr><td>4</td><td>100%</td><td>187.758</td></tr>
+</table>
+<p>
+Contra Random, incluso depth=2 ya domina — las diferencias entre profundidades emergen al enfrentar
+oponentes hábiles, como muestra el siguiente sweep:
+</p>
+<table>
+  <tr><th>Configuración</th><th>Win rate vs. baseline (mob_only d3)</th><th>p-valor</th><th>Significativo</th></tr>
+  <tr><td>mobility_only depth=2</td><td>34%</td><td>0.0014</td><td>✓ — depth=2 significativamente peor</td></tr>
+  <tr><td>full depth=2</td><td>39%</td><td>0.0278</td><td>✓ — depth=2 significativamente peor</td></tr>
+  <tr><td>mobility_territory depth=2</td><td>45%</td><td>0.317</td><td>n.s.</td></tr>
+  <tr><td>mobility_territory depth=3</td><td>38%</td><td>0.016</td><td>✓ (ruido — equivalente al baseline)</td></tr>
+  <tr><td>full depth=3</td><td>44%</td><td>0.230</td><td>n.s.</td></tr>
+  <tr><td><strong>mobility_only depth=4</strong></td><td><strong>67%</strong></td><td><strong>0.0007</strong></td><td><strong>✓✓ muy significativo</strong></td></tr>
+  <tr><td>mobility_territory depth=4</td><td>65%</td><td>0.0027</td><td>✓✓ significativo</td></tr>
+  <tr><td>full depth=4</td><td>56%</td><td>0.230</td><td>n.s. — la complejidad extra no ayuda</td></tr>
+</table>
+<figure>
+  <img src="../reports/figures/rigorous_depth_sweep.png" alt="Sweep de profundidad x heurística">
+  <figcaption>Figura 10: Win rate vs. baseline (mobility_only, depth=3) para distintas combinaciones de
+  profundidad y heurística. <code>mobility_only depth=4</code> es la única mejora altamente significativa.</figcaption>
+</figure>
+<p>
+<strong>Hallazgo central:</strong> la <strong>profundidad domina sobre la calidad de la heurística</strong>.
+<code>mobility_only depth=4</code> vence a <code>mobility_only depth=3</code> con p=0.0007 (diferencia
+altamente significativa), mientras que <code>full depth=4</code> no mejora significativamente sobre el
+baseline — la mayor complejidad de <code>eval_full</code> introduce ruido en la evaluación de las hojas
+del árbol que un mayor lookahead no compensa.
+</p>
+
+<h3>Agente final: validación contra Stratagem, Random y mirror match</h3>
+<table>
+  <tr><th>Experimento</th><th>Resultado</th><th>p-valor</th><th>IC Wilson 95%</th><th>Propósito</th></tr>
+  <tr><td>Agente final vs Stratagem</td><td><strong>76/100 (76%)</strong></td><td>≈0</td><td>[66.8%, 83.3%]</td><td>Benchmark externo (agente de cátedra)</td></tr>
+  <tr><td>Agente final vs Random</td><td>85/100 (85%)</td><td>≈0</td><td>[76.7%, 90.7%]</td><td>Confirmar dominancia básica</td></tr>
+  <tr><td>Mirror match (d4 vs d4)</td><td>P1 gana 73/100 (73%)</td><td>≈0</td><td>[63.6%, 80.7%]</td><td>Cuantificar ventaja del primer jugador</td></tr>
+</table>
+<figure>
+  <img src="../reports/figures/rigorous_vs_stratagem.png" alt="Agente final vs Stratagem y Random">
+  <figcaption>Figura 11: Desempeño del agente final (<code>MinimaxAgent</code>, depth=4, <code>eval_mobility_only</code>,
+  Alpha-Beta) frente a <code>Stratagem</code> y a <code>RandomAgent</code>, con intervalos de confianza.</figcaption>
+</figure>
+<figure>
+  <img src="../reports/figures/rigorous_summary.png" alt="Resumen ejecutivo MATE">
+  <figcaption>Figura 12: Resumen ejecutivo de los tres experimentos centrales — impacto de Alpha-Beta, sweep
+  de profundidad y benchmark contra Stratagem/Random.</figcaption>
+</figure>
+
+<h2>2.6 Conclusiones — Proyecto MATE</h2>
+<p><strong>Agente final elegido:</strong></p>
+<div class="ai-box">
+<code>MinimaxAgent(depth=4, heuristic=eval_mobility_only, use_alpha_beta=True, use_move_ordering=False)</code>
+</div>
+<ul>
+  <li><strong>Alpha-Beta es esencial:</strong> sin él, depth=4 toma 45.6 s/partida (inviable); con AB, 1.15 s/partida (-97% de nodos).</li>
+  <li><strong>Las heurísticas son estadísticamente equivalentes</strong> en 4×4 a depth=3 (Bonferroni, p&gt;0.005 en los 10 pares) → se elige <code>mobility_only</code> por simplicidad y velocidad, sin penalización empírica.</li>
+  <li><strong>La profundidad es el factor decisivo</strong>, más que la heurística: depth=4 supera a depth=3 con p=0.0007.</li>
+  <li><strong>Minimax &gt;&gt; Expectimax</strong> a depth=3 (94% de victorias, p≈0.0000): el oponente real juega casi óptimo, por lo que la suposición de Expectimax (oponente aleatorio) es incorrecta en este dominio.</li>
+  <li>El agente final venció a <code>Stratagem</code> (agente de referencia de la cátedra) en el 76% de 100 partidas balanceadas (p≈0), y a <code>RandomAgent</code> en el 85%.</li>
+  <li><strong>Ventaja estructural del primer jugador:</strong> ~73% en tablero 4×4 a depth=4 — por eso todos los torneos se balancean 50% P1 / 50% P2.</li>
+</ul>
+
+<!-- ============================================================ -->
+<!-- SECCIÓN 3: CONCLUSIONES GENERALES                             -->
+<!-- ============================================================ -->
+<h1 id="conclusiones">3. Conclusiones generales</h1>
+<p>
+Ambos proyectos abordan problemas de decisión secuencial bajo paradigmas opuestos: LOST es un problema de
+<strong>aprendizaje por refuerzo</strong> en un ambiente continuo de un solo agente, mientras que MATE es un
+problema de <strong>búsqueda adversarial</strong> de suma cero entre dos agentes. La siguiente tabla resume
+los puntos de comparación más relevantes:
+</p>
+<table>
+  <tr><th>Aspecto</th><th>LOST (Q-Learning / Dyna-Q)</th><th>MATE (Minimax / Expectimax)</th></tr>
+  <tr><td>Tipo de problema</td><td>Aprendizaje por refuerzo (ambiente continuo)</td><td>Búsqueda adversarial (juego de suma cero)</td></tr>
+  <tr><td>Técnica principal</td><td>Q-Learning tabular + Dyna-Q</td><td>Minimax con Alpha-Beta Pruning</td></tr>
+  <tr><td>Desafío central</td><td>Recompensa esparsa; meta a ~500 pasos</td><td>Factor de ramificación ~96; profundidad limitada</td></tr>
+  <tr><td>Solución al desafío</td><td>q_init=1.0 (inicialización optimista) + γ=0.99</td><td>Alpha-Beta Pruning (-97% de nodos a depth=4)</td></tr>
+  <tr><td>Mejor resultado</td><td>94.14 reward, 100% éxito (15k episodios)</td><td>76% vs. Stratagem, 85% vs. Random</td></tr>
+  <tr><td>Tiempo de entrenamiento/cómputo</td><td>QL: ~5 min (15k eps) / Dyna-Q: ~4 min (5k eps)</td><td>No aplica — búsqueda en tiempo real (~1.15 s/jugada a depth=4 con AB)</td></tr>
+  <tr><td>Hallazgo no obvio</td><td>γ&lt;0.99 hace la meta invisible (0.9⁵⁰⁰ ≈ 10⁻²³)</td><td>Profundidad &gt; calidad de heurística (mob_only d4 supera a territory d3)</td></tr>
+</table>
+
+<h2>Uso de Inteligencia Artificial Generativa</h2>
+<div class="ai-box">
+<strong>Herramienta utilizada:</strong> Claude (Anthropic).<br>
+<strong>Contexto de uso:</strong>
+<ul style="margin:0.4em 0;">
+  <li>Estructuración y organización del repositorio del proyecto.</li>
+  <li>Generación de código base (esqueletos de clases y funciones para los agentes Q-Learning, Dyna-Q, Minimax y Expectimax).</li>
+  <li>Revisión, depuración y corrección de bugs en las implementaciones.</li>
+  <li>Diseño y generación de scripts de experimentación, análisis estadístico y figuras para el informe.</li>
+</ul>
+Todo el contenido generado fue revisado, ejecutado, verificado y comprendido por los integrantes del equipo.
+Los errores presentes en el trabajo son responsabilidad de los autores.
+</div>
+<p>
+Las dificultades encontradas durante el desarrollo, así como los hallazgos no triviales del proceso
+experimental, se detallan en la Sección 4.
+</p>
+
+<!-- ============================================================ -->
+<!-- SECCIÓN 4: ADVERTENCIAS Y DIFICULTADES                        -->
+<!-- ============================================================ -->
+<h1 id="advertencias">4. Advertencias y dificultades encontradas</h1>
+
+<h2>Proyecto LOST</h2>
+
+<h3>1. q_init=0 nunca converge <span class="badge badge-ok">Resuelta</span></h3>
+<p>
+Q-Learning con la tabla Q inicializada en 0 no llega a la meta en ninguna configuración probada. Como
+<code>r = -0.1·a²</code> es negativo para cualquier acción con fuerza, la primera vez que se visita un par
+<code>(s,a)</code> con <code>|a|&gt;0</code>, su valor Q se vuelve negativo. Con ε decayendo, el agente
+termina prefiriendo estados aún no visitados (Q=0, "neutro") sobre acciones con fuerza, aprendiendo que
+<strong>fuerza ≈ 0</strong> minimiza la penalización — un mínimo local del que nunca escapa, porque el reward
+<code>+100</code> de la meta jamás llega a propagarse.
+</p>
+<p><strong>Solución:</strong> <code>q_init=1.0</code> (inicialización optimista). Como 1.0 &gt; cualquier
+valor negativo ya observado, el agente se ve "obligado" a seguir explorando cada estado antes de concluir
+que es malo, hasta que eventualmente alcanza la meta y el valor +100 comienza a propagarse hacia atrás.</p>
+
+<h3>2. γ &lt; 0.99 hace la meta invisible <span class="badge badge-ok">Resuelta</span></h3>
+<p>
+Con γ=0.90, el valor descontado de la recompensa de la meta a ~500 pasos de distancia es
+<code>0.9⁵⁰⁰ ≈ 10⁻²³</code> — numéricamente indistinguible de cero en los TD-updates. Solo con γ≥0.99
+(<code>0.99⁵⁰⁰ ≈ 0.0066</code>) la señal de la meta logra "verse" desde estados lejanos. Este es el
+hiperparámetro más sensible del proyecto: con γ∈{0.90, 0.95}, la tasa de éxito es <strong>0%</strong> sin
+importar cuántos episodios se entrenen.
+</p>
+
+<h3>3. Dyna-Q: sensibilidad al estado del generador aleatorio <span class="badge badge-warn">Descubierta en validación</span></h3>
+<p>
+Al validar la robustez con múltiples semillas (<code>random.seed</code> + <code>np.random.seed</code>),
+Dyna-Q con <code>q_init=0</code> falló consistentemente: <strong>0% de éxito en las 3 semillas probadas</strong>
+con 5.000 episodios. El modelo <code>dynaq_FINAL.pkl</code> entregado fue entrenado <em>sin</em> semilla fija
+y convergió gracias a un estado del RNG favorable. La causa raíz: Dyna-Q necesita encontrar la meta
+<strong>al menos una vez</strong> mediante exploración aleatoria para que la planificación tenga algo que
+propagar; con un RNG desfavorable, esa primera llegada nunca ocurre dentro del presupuesto de episodios y el
+modelo de planificación queda "vacío" de información útil.
+</p>
+<p><strong>Solución verificada:</strong> con <code>q_init=1.0</code>, Dyna-Q se vuelve robusto y reproducible
+entre semillas (ver tabla multi-semilla a continuación).</p>
+
+<h3>4. Dyna-Q: curva no monótona de n_planning <span class="badge badge-ok">Resuelta</span></h3>
+<p>
+Como se muestra en la Sección 1.5, n_planning=20 produce <em>peor</em> desempeño (18% éxito) que n_planning=10
+(66% éxito) bajo el mismo presupuesto de episodios. Con un modelo todavía poco denso, demasiada planificación
+refuerza prematuramente valores Q basados en pocas transiciones observadas, generando una política subóptima
+de la que es difícil escapar luego. n=10 resultó ser el punto óptimo para 3.000-5.000 episodios.
+</p>
+
+<h3>Resultados multi-semilla (3 seeds, seeding dual numpy + python)</h3>
+<table>
+  <tr><th>Algoritmo</th><th>q_init</th><th>Episodios</th><th>Seed 0</th><th>Seed 1</th><th>Seed 2</th><th>Cross-seed</th></tr>
+  <tr><td>Q-Learning</td><td>1.0</td><td>15.000</td><td>92.75 / 100%</td><td>91.98 / 100%</td><td>94.32 / 100%</td><td><strong>93.02 ± 0.97</strong> <span class="badge badge-ok">✅</span></td></tr>
+  <tr><td>Dyna-Q</td><td>0.0</td><td>5.000</td><td>0.00 / 0%</td><td>0.00 / 0%</td><td>0.00 / 0%</td><td>0.00 ± 0.00 <span class="badge badge-bad">❌</span></td></tr>
+  <tr><td>Dyna-Q</td><td>1.0</td><td>5.000</td><td>91.46 / 100%</td><td>87.16 / 100%</td><td>61.52 / 70%</td><td>80.05 ± 13.22 <span class="badge badge-warn">⚠️</span></td></tr>
+  <tr><td>Dyna-Q</td><td>0.0</td><td>10.000</td><td>91.36 / 100%</td><td>—</td><td>—</td><td>parcial <span class="badge badge-ok">✅</span></td></tr>
+</table>
+<p>
+<strong>Conclusión:</strong> Q-Learning (q_init=1.0, 15k episodios) es la <strong>única configuración robusta
+y reproducible</strong> entre semillas. Dyna-Q requiere ≥10k episodios o una inicialización optimista para
+ser reproducible de forma confiable. El modelo <code>dynaq_FINAL.pkl</code> entregado es válido (entrenado
+sin semilla fija y exitoso) pero no está garantizado que se reproduzca igual con cualquier semilla — esta es
+la principal limitación a declarar del Proyecto LOST. Datos completos en
+<code>models/lost/multiseed_corrected.csv</code>.
+</p>
+
+<h2>Proyecto MATE</h2>
+
+<h3>5. La paradoja del Move Ordering <span class="badge badge-ok">Resuelta</span></h3>
+<p>
+Move Ordering reduce un 99.7% los nodos expandidos respecto a Minimax puro (vs. 97% de AB solo a depth=4),
+pero resulta <strong>más lento en tiempo de pared</strong> (1.94 s vs. 1.15 s/partida). El overhead de
+calcular la heurística para ordenar las acciones en cada nodo supera el beneficio de la poda adicional
+cuando la heurística es O(1) (como <code>h_mobility</code>). Conclusión: Move Ordering solo se justifica con
+heurísticas costosas (<code>h_territory</code>, <code>h_future_mobility</code>); con la heurística elegida
+(<code>mobility_only</code>), Alpha-Beta solo es la mejor configuración.
+</p>
+
+<h3>6. Ventaja estructural del primer jugador <span class="badge badge-warn">No resuelta — mitigada</span></h3>
+<p>
+En el mirror match (<code>mobility_only</code> depth=4 vs. sí mismo), P1 gana el <strong>73%</strong> de las
+partidas (p≈0). Esto es inherente al tablero 4×4: el primer jugador siempre tiene acceso a más "territorio
+virgen". No es un problema de los agentes implementados, sino una propiedad del entorno. Se mitiga
+balanceando todos los torneos (50% de las partidas con cada agente como P1), de modo que las comparaciones
+entre heurísticas/profundidades no estén sesgadas por este efecto.
+</p>
+
+<h3>7. Las heurísticas son estadísticamente equivalentes <span class="badge badge-warn">Hallazgo, no dificultad</span></h3>
+<p>
+El experimento riguroso (Sección 2.4) mostró que las 5 heurísticas implementadas son equivalentes en 4×4 a
+depth=3 (ningún par supera α=0.005 post-Bonferroni). Esto fue inesperado — la hipótesis inicial era que
+<code>eval_full</code> o <code>eval_territory</code> serían claramente superiores por incorporar más señales.
+Con Alpha-Beta a mayor profundidad, el lookahead compensa la calidad de la evaluación de las hojas, haciendo
+que la elección de heurística sea, en la práctica, secundaria frente a la profundidad de búsqueda.
+</p>
+
+<h3>8. depth=5 mejora sobre depth=4 en 1v1, pero no contra Stratagem <span class="badge badge-warn">Hallazgo de extensión</span></h3>
+<p>
+Como extensión, se evaluó <code>mobility_only depth=5</code>: vence a depth=4 en enfrentamiento directo
+(62%, p=0.016), pero contra <code>Stratagem</code> obtiene 74% — estadísticamente indistinguible del 76% de
+depth=4 (intervalos de confianza solapados). El costo computacional adicional de depth=5 no se traduce en una
+mejora medible contra el benchmark externo, por lo que <strong>depth=4 se mantiene como el punto óptimo
+práctico</strong> elegido para el agente final. Datos en <code>models/mate/depth5_results.csv</code>.
+</p>
+
+<!-- ============================================================ -->
+<!-- SECCIÓN 5: ANEXOS                                             -->
+<!-- ============================================================ -->
+<h1 id="anexos">5. Anexos</h1>
+
+<h2>5.1 Figuras adicionales</h2>
+<figure>
+  <img src="../reports/figures/dq_learning_curve.png" alt="Curva de aprendizaje Dyna-Q individual">
+  <figcaption>Figura A1: Curva de aprendizaje individual de Dyna-Q (n_planning=10, q_init=0, 20×20 bins, 15
+  acciones, 5.000 episodios). Primer episodio exitoso en el episodio 371.</figcaption>
+</figure>
+<figure>
+  <img src="../reports/figures/heuristic_roundrobin_full.png" alt="Round-robin exploratorio de heurísticas">
+  <figcaption>Figura A2: Heatmap del round-robin exploratorio inicial (60 partidas/par) entre las 5
+  heurísticas — etapa previa al experimento riguroso de la Sección 2.4, que motivó repetirlo con 100
+  partidas/par y corrección de Bonferroni.</figcaption>
+</figure>
+<figure>
+  <img src="../reports/figures/depth_vs_winrate.png" alt="Profundidad vs win rate contra Random">
+  <figcaption>Figura A3: Win rate vs. RandomAgent y nodos promedio expandidos por partida, para profundidades
+  2, 3 y 4.</figcaption>
+</figure>
+
+<h2>5.2 Fragmentos de código relevantes</h2>
+
+<h3>Discretizador (utils/discretization.py)</h3>
+<pre>def obs_to_state(self, obs: np.ndarray) -&gt; tuple[int, int]:
+    """Convierte una observación continua en un índice de estado discreto."""
+    x, vel = obs
+    x_bin = int(np.digitize(x, self.pos_bins))
+    vel_bin = int(np.digitize(vel, self.vel_bins))
+    return x_bin, vel_bin
+
+def action_index_to_continuous(self, idx: int) -&gt; np.ndarray:
+    """Convierte un índice de acción discreta en la acción continua del ambiente."""
+    return np.array([self.actions[idx]])</pre>
+
+<h3>Regla de actualización Q-Learning (q_learning_agent.py)</h3>
+<pre>def _update(self, obs, action_idx, reward, next_obs, done):
+    state = self.disc.obs_to_state(obs)
+    next_state = self.disc.obs_to_state(next_obs)
+
+    max_next_q = 0.0 if done else float(np.max(self.Q[next_state]))
+    target = reward + self.gamma * max_next_q
+    self.Q[state][action_idx] += self.alpha * (target - self.Q[state][action_idx])</pre>
+
+<h3>Paso Dyna-Q: actualización real + modelo + planificación (dyna_q_agent.py)</h3>
+<pre>def _dyna_step(self, obs, action_idx, reward, next_obs, done):
+    state = self.disc.obs_to_state(obs)
+    next_state = self.disc.obs_to_state(next_obs)
+
+    # 1. Actualizacion Q con experiencia real
+    self._q_update(state, action_idx, reward, next_state, done)
+
+    # 2. Actualizar modelo
+    self.model[(state, action_idx)] = (reward, next_state, done)
+    if (state, action_idx) not in self._visited_set:
+        self._visited_set.add((state, action_idx))
+        self._visited.append((state, action_idx))
+
+    # 3. n pasos de planificacion simulada
+    for _ in range(self.n_planning):
+        if not self._visited:
+            break
+        s, a = random.choice(self._visited)
+        r_sim, s_next_sim, done_sim = self.model[(s, a)]
+        self._q_update(s, a, r_sim, s_next_sim, done_sim)</pre>
+
+<h3>Minimax con Alpha-Beta Pruning (minimax_agent.py)</h3>
+<pre>def _max_value(self, board, depth, alpha, beta):
+    self._nodes_expanded += 1
+    is_end, winner = board.is_end(self.player)
+    if is_end:
+        return INF if winner == self.player else -INF
+    if depth &gt;= self.max_depth:
+        return self.heuristic(board, self.player)
+
+    value = -INF
+    for action in self._ordered_actions(board, self.player, maximize=True):
+        child = board.clone()
+        child.play(action, self.player)
+        value = max(value, self._min_value(child, depth + 1, alpha, beta))
+        if value &gt;= beta:
+            return value  # poda beta
+        alpha = max(alpha, value)
+    return value</pre>
+
+<h2>5.3 Repositorio</h2>
+<p>
+El código completo (notebooks, agentes, heurísticas, scripts de experimentación, modelos <code>.pkl</code> y
+figuras) se encuentra en el repositorio entregado junto con este informe. Para más detalle sobre cómo
+ejecutar cada experimento, ver <code>README.md</code> en la raíz del proyecto.
+</p>
+
+</body>
+</html>

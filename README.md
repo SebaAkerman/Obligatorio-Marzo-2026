@@ -133,6 +133,6 @@ Todo el contenido fue revisado, verificado y comprendido por los integrantes del
 | Nombre | Nro. Estudiante |
 |---|---|
 | Sebastian Akerman | 282163 |
-| Felipe Kelmanson | ... |
+| Felipe Kelmanzon | 282212 |
 
 **Dictado:** Ingeniería en Sistemas — Inteligencia Artificial
