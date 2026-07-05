@@ -3,11 +3,10 @@
 Experimento riguroso de comparación de heurísticas — Proyecto MATE.
 
 Diseño estadístico:
-  - Round-robin completo: C(5,2) = 10 pares, 100 partidas/par (50 P1 + 50 P2)
+  - Round-robin completo: C(5,2) = 10 pares, 1500 partidas/par (750 P1 + 750 P2)
   - Test binomial (aproximación normal): H0: winrate = 0.5 (sin diferencia)
   - Corrección de Bonferroni: α_adj = 0.05 / 10 = 0.005 por par
-  - Potencia teórica: ~94% para detectar diferencias >= 10%
-  - Mínima diferencia detectable post-Bonferroni: ~14% (z_crit=2.807)
+  - Mínima diferencia detectable post-Bonferroni: ~4% con 1500 partidas (vs ~14% con 100)
 
 Fases:
   1. Round-Robin completo (5 heurísticas, depth=3)
@@ -64,10 +63,10 @@ HEURISTICS_RR = {
     "territory":       eval_territory,
     "mob_territory":   eval_mobility_territory,
 }
-N_RR        = 100   # partidas por par en round-robin (50 P1 + 50 P2)
-N_DEPTH     = 100   # partidas por celda en sweep de profundidad
-N_MV_EXP    = 100   # partidas minimax vs expectimax
-N_STRATAGEM = 100   # partidas vs Stratagem
+N_RR        = 1500  # partidas por par en round-robin (750 P1 + 750 P2) — alta potencia
+N_DEPTH     = 500   # partidas por celda en sweep de profundidad
+N_MV_EXP    = 300   # partidas minimax vs expectimax
+N_STRATAGEM = 300   # partidas vs Stratagem
 ALPHA       = 0.05  # nivel de significancia global
 DEPTH_RR    = 3     # profundidad para el round-robin
 

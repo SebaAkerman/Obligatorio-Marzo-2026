@@ -1,16 +1,3 @@
-"""
-Agente Q-Learning tabular para MountainCarContinuous-v0.
-
-Referencia: Russell & Norvig — cap. 22 (Reinforcement Learning)
-            Sutton & Barto  — cap. 6.5 (Q-learning: Off-policy TD Control)
-            QL.pdf (Yovine, ORT Uruguay)
-
-Regla de actualización:
-    Q(s, a) ← Q(s, a) + α · [r + γ · max_a' Q(s', a') − Q(s, a)]
-
-Exploración: política ε-greedy. ε puede decaer a lo largo del entrenamiento.
-"""
-
 import pickle
 import random
 from pathlib import Path
@@ -27,8 +14,7 @@ class QLearningAgent:
     Agente Q-Learning tabular con política ε-greedy.
 
     El Discretizer se construye internamente a partir de los parámetros
-    de bins y acciones, permitiendo explorar distintas granularidades
-    como pide el obligatorio.
+    de bins y acciones, permitiendo explorar distintas granularidades.
 
     Parámetros de __init__
     ----------------------
@@ -65,10 +51,6 @@ class QLearningAgent:
         # Historial de entrenamiento (para gráficos e informe)
         self.training_rewards: list[float] = []
 
-    # ------------------------------------------------------------------
-    # Política ε-greedy  (firma exacta de la cátedra)
-    # ------------------------------------------------------------------
-
     def next_action(self, obs: np.ndarray) -> np.ndarray:
         """
         Selecciona una acción con política ε-greedy usando self.epsilon actual.
@@ -92,20 +74,12 @@ class QLearningAgent:
 
         return self.disc.action_index_to_continuous(action_idx)
 
-    # ------------------------------------------------------------------
-    # Método interno: índice de acción para la actualización de Q
-    # ------------------------------------------------------------------
-
     def _action_index(self, obs: np.ndarray) -> int:
         """Como next_action pero devuelve el índice (necesario para actualizar Q)."""
         state = self.disc.obs_to_state(obs)
         if random.random() < self.epsilon:
             return self.disc.sample_action_index()
         return int(np.argmax(self.Q[state]))
-
-    # ------------------------------------------------------------------
-    # Actualización Q (regla Bellman off-policy)
-    # ------------------------------------------------------------------
 
     def _update(
         self,
@@ -121,10 +95,6 @@ class QLearningAgent:
         max_next_q = 0.0 if done else float(np.max(self.Q[next_state]))
         target = reward + self.gamma * max_next_q
         self.Q[state][action_idx] += self.alpha * (target - self.Q[state][action_idx])
-
-    # ------------------------------------------------------------------
-    # Entrenamiento  (firma exacta de la cátedra + parámetros opcionales)
-    # ------------------------------------------------------------------
 
     def train_agent(
         self,
@@ -142,7 +112,7 @@ class QLearningAgent:
         """
         Entrena el agente con Q-Learning durante `episodes` episodios.
 
-        Parámetros de la cátedra
+        Parámetros conocidos
         ------------------------
         env      : ambiente Gymnasium.
         episodes : número de episodios de entrenamiento.
@@ -200,10 +170,6 @@ class QLearningAgent:
                 )
 
         return self.training_rewards
-
-    # ------------------------------------------------------------------
-    # Evaluación  (firma exacta de la cátedra)
-    # ------------------------------------------------------------------
 
     def test_agent(
         self,
@@ -263,10 +229,6 @@ class QLearningAgent:
             f"Éxitos: {results['success_rate']:.0%}"
         )
         return results
-
-    # ------------------------------------------------------------------
-    # Persistencia
-    # ------------------------------------------------------------------
 
     def save(self, path: str) -> None:
         """Guarda el modelo entrenado en formato .pkl."""

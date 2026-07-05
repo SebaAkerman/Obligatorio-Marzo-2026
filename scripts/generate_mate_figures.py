@@ -110,8 +110,9 @@ def balanced(fa, fb, n):
     return {"wins_a": wins_a, "wins_b": wins_b, "n": n,
             "wr_a": wins_a/n, "p": p, "ci_lo": ci_lo, "ci_hi": ci_hi}
 
-def mm4():
-    return lambda p: MinimaxAgent(p, max_depth=4,
+def mm_final():
+    # Agente final: Minimax-AB, mob_only, depth=5 (elegido tras el sweep de profundidad)
+    return lambda p: MinimaxAgent(p, max_depth=5,
                                   heuristic=eval_mobility_only, use_alpha_beta=True)
 
 # ── Experimentos adicionales ───────────────────────────────────────────────
@@ -124,16 +125,16 @@ def run_extra_experiments():
     extra_rows = []
 
     # 1. Agente final vs Random
-    print("\n[1/2] mob_only d4 vs Random (100 partidas balanceadas)...")
+    print("\n[1/2] mob_only d5 vs Random (200 partidas balanceadas)...")
     t0 = time.time()
-    res = balanced(mm4(), lambda p: RandomAgent(p), 100)
+    res = balanced(mm_final(), lambda p: RandomAgent(p), 200)
     t = time.time() - t0
     print(f"  → {res['wins_a']}/100  wr={res['wr_a']:.3f}  "
           f"CI=[{res['ci_lo']:.3f},{res['ci_hi']:.3f}]  "
           f"p={res['p']:.5f}  ({t:.0f}s)")
     extra_rows.append({
         "experiment": "final_agent_vs_random",
-        "agent_a": "mob_only_d4",
+        "agent_a": "mob_only_d5",
         "agent_b": "random",
         "wins_a": res["wins_a"], "n": res["n"],
         "win_rate_a": round(res["wr_a"], 4),
@@ -143,13 +144,13 @@ def run_extra_experiments():
     })
 
     # 2. Mirror match (P1 advantage)
-    print("\n[2/2] Mirror match: mob_only d4 vs mob_only d4 (100 partidas)...")
-    print("      (mide ventaja del primer jugador a depth=4)")
+    print("\n[2/2] Mirror match: mob_only d5 vs mob_only d5 (100 partidas)...")
+    print("      (mide ventaja del primer jugador a depth=5)")
     t0 = time.time()
     p1_wins = 0
     for _ in range(100):
-        a1 = MinimaxAgent(1, 4, eval_mobility_only, True)
-        a2 = MinimaxAgent(2, 4, eval_mobility_only, True)
+        a1 = MinimaxAgent(1, 5, eval_mobility_only, True)
+        a2 = MinimaxAgent(2, 5, eval_mobility_only, True)
         env = IsolationEnv()
         board = env.reset()
         done = False
@@ -170,8 +171,8 @@ def run_extra_experiments():
           f"CI=[{ci_lo_m:.3f},{ci_hi_m:.3f}]  p={p_mirror:.5f}  ({t:.0f}s)")
     extra_rows.append({
         "experiment": "mirror_match_p1_advantage",
-        "agent_a": "mob_only_d4_as_P1",
-        "agent_b": "mob_only_d4_as_P2",
+        "agent_a": "mob_only_d5_as_P1",
+        "agent_b": "mob_only_d5_as_P2",
         "wins_a": p1_wins, "n": 100,
         "win_rate_a": round(p1_wins/100, 4),
         "p_value": round(p_mirror, 6),
@@ -241,7 +242,7 @@ def fig_depth_sweep():
     ax.set_ylim(0.15, 1.05)
     ax.set_ylabel("Win rate vs mob_only d3")
     ax.set_title("Sweep de Profundidad × Heurística vs Baseline (mob_only depth=3)\n"
-                 "100 partidas balanceadas por celda — ** p<0.01, * p<0.05, n.s. p≥0.05")
+                 "500 partidas balanceadas por celda — ** p<0.01, * p<0.05, n.s. p≥0.05")
 
     legend_elements = [
         mpatches.Patch(color=STYLE["sig"],  label="Significativo (mejor, p<0.01)"),
@@ -277,14 +278,20 @@ def fig_roundrobin():
             yerr=[err_lo, err_hi], capsize=5,
             error_kw={"elinewidth": 1.5, "ecolor": "black"})
     ax1.axhline(0.5, color="black", lw=1.2, ls="--", alpha=0.6, label="50% (sin diferencia)")
-    for i, wr in enumerate(wrs):
-        ax1.text(i, wr + err_hi[i] + 0.015, "n.s.", ha="center", fontsize=9, color="gray")
+    # significancia del win-rate global vs 50% (test binomial)
+    for i, (nm, wr) in enumerate(zip(names, wrs)):
+        row = next(r for r in summary if r["heuristic"] == nm)
+        tw, tg = int(row["total_wins"]), int(row["total_games"])
+        p = binom_p(tw, tg)
+        lbl = "n.s." if p >= 0.05 else ("*" if p >= 0.005 else "**")
+        ax1.text(i, wr + err_hi[i] + 0.015, lbl, ha="center", fontsize=9,
+                 color="gray" if p >= 0.05 else "#C62828")
     ax1.set_xticks(x)
     ax1.set_xticklabels(names, rotation=15, ha="right", fontsize=9)
     ax1.set_ylim(0.35, 0.70)
     ax1.set_ylabel("Win rate (round-robin)")
     ax1.set_title("Win rate global — Round-Robin Riguroso\n"
-                  "(100 partidas/par, Bonferroni α=0.005: ninguna diferencia significativa)")
+                  "(1500 partidas/par, Bonferroni α=0.005)")
     ax1.legend(fontsize=8)
     ax1.grid(axis="y", alpha=0.3)
 
@@ -322,7 +329,8 @@ def fig_roundrobin():
                 ax2.text(j, i, "—", ha="center", va="center", fontsize=8, color="gray")
     plt.colorbar(im, ax=ax2, fraction=0.046, pad=0.04)
 
-    plt.suptitle("Round-Robin Riguroso: 5 Heurísticas — Todas Equivalentes (depth=3)",
+    plt.suptitle("Round-Robin Riguroso: 5 Heurísticas (1500 partidas/par, depth=3)\n"
+                 "Top-4 equivalentes; mob_territory significativamente peor",
                  fontsize=11, fontweight="bold")
     plt.tight_layout()
     out = FIGURES / "rigorous_roundrobin.png"
@@ -374,7 +382,7 @@ def fig_minimax_vs_exp():
     ax.set_xticklabels(labels, fontsize=9)
     ax.set_ylim(0.20, 1.10)
     ax.set_ylabel("Win rate de Minimax")
-    ax.set_title("Minimax vs Expectimax — 100 partidas balanceadas por matchup\n"
+    ax.set_title("Minimax vs Expectimax — 200-300 partidas balanceadas por matchup\n"
                  "Heurística: mob_only | Barra = win rate de Minimax + IC Wilson 95%")
 
     legend_elements = [
@@ -400,7 +408,7 @@ def fig_vs_stratagem(extra_rows=None):
 
     fig, ax = plt.subplots(figsize=(8, 4))
 
-    agents = ["Minimax-AB\nmob_only d4\nvs Stratagem"]
+    agents = ["Minimax-AB\nmob_only d5\nvs Stratagem"]
     wrs    = [wr]
     err_lo = [wr - ci_lo]
     err_hi = [ci_hi - wr]
@@ -412,7 +420,7 @@ def fig_vs_stratagem(extra_rows=None):
             if r["experiment"] == "final_agent_vs_random":
                 wr_r = float(r["win_rate_a"])
                 lo_r, hi_r = float(r["ci_lo"]), float(r["ci_hi"])
-                agents.append("Minimax-AB\nmob_only d4\nvs Random")
+                agents.append("Minimax-AB\nmob_only d5\nvs Random")
                 wrs.append(wr_r)
                 err_lo.append(wr_r - lo_r)
                 err_hi.append(hi_r - wr_r)
@@ -432,8 +440,8 @@ def fig_vs_stratagem(extra_rows=None):
     ax.set_xticklabels(agents, fontsize=9)
     ax.set_ylim(0.3, 1.15)
     ax.set_ylabel("Win rate (partidas balanceadas)")
-    ax.set_title("Agente Final: Minimax-AB mob_only depth=4\n"
-                 "100 partidas balanceadas — IC Wilson 95%")
+    ax.set_title("Agente Final: Minimax-AB mob_only depth=5\n"
+                 "200-300 partidas balanceadas — IC Wilson 95%")
     ax.legend(fontsize=8)
     ax.grid(axis="y", alpha=0.3)
     plt.tight_layout()
@@ -475,7 +483,7 @@ def fig_summary(extra_rows=None):
     ax = axes[1]
     ds = read_csv(MODELS / "rigorous_depth_sweep.csv")
     key_configs = [("mob_only", 2), ("mob_only", 3), ("mob_only", 4),
-                   ("mob_territory", 4), ("full", 4)]
+                   ("mob_center", 4), ("full", 4)]
     xlabels, vals, errs_lo, errs_hi, bcols = [], [], [], [], []
     for h, d in key_configs:
         r = next((x for x in ds if x["heuristic"] == h and int(x["depth"]) == d), None)
@@ -530,7 +538,7 @@ def fig_summary(extra_rows=None):
     sr = read_csv(MODELS / "rigorous_vs_stratagem.csv")[0]
     wr_s = float(sr["win_rate"])
     lo, hi = float(sr["ci_lo"]), float(sr["ci_hi"])
-    labels_b.append("mob_only d4\nvs Stratagem")
+    labels_b.append("mob_only d5\nvs Stratagem")
     wrs_b.append(wr_s); errs_lo_b.append(wr_s-lo); errs_hi_b.append(hi-wr_s)
     cols_b.append(STYLE["strat"])
 
@@ -540,7 +548,7 @@ def fig_summary(extra_rows=None):
             if r["experiment"] == "final_agent_vs_random":
                 wr_r = float(r["win_rate_a"])
                 lo_r, hi_r = float(r["ci_lo"]), float(r["ci_hi"])
-                labels_b.append("mob_only d4\nvs Random")
+                labels_b.append("mob_only d5\nvs Random")
                 wrs_b.append(wr_r)
                 errs_lo_b.append(wr_r - lo_r)
                 errs_hi_b.append(hi_r - wr_r)
@@ -558,7 +566,7 @@ def fig_summary(extra_rows=None):
     ax.set_xticklabels(labels_b, fontsize=8)
     ax.set_ylim(0.3, 1.15)
     ax.set_ylabel("Win rate")
-    ax.set_title("Benchmarks del agente final\n(mob_only depth=4, 100 partidas c/u)")
+    ax.set_title("Benchmarks del agente final\n(mob_only depth=5)")
     ax.grid(axis="y", alpha=0.3)
 
     plt.tight_layout()

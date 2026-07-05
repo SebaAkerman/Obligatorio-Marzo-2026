@@ -246,27 +246,6 @@
    ]
   },
   {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
-    "---\n",
-    "## ⭐ ACTUALIZACIÓN — Validación escalada (1500 partidas/par, ~8 h)\n",
-    "\n",
-    "> Las celdas de esta sección corresponden a una **fase exploratoria** (n=50–100 partidas, profundidad ≤ 4).\n",
-    "> Posteriormente escalamos la muestra para ganar potencia estadística, y eso **cambió dos conclusiones**:\n",
-    ">\n",
-    "> 1. **Agente final = `MinimaxAgent(depth=5, eval_mobility_only, use_alpha_beta=True)`** (antes depth=4).\n",
-    ">    `depth=5` vence a `depth=4` el **63 %** (n=300, p≈10⁻⁵) y sube contra Stratagem de 69.4 % a **76.7 %**;\n",
-    ">    `depth=6` ya no aporta (50 %, n=60) → **techo en depth=5**.\n",
-    "> 2. **Heurísticas:** con 1500 partidas/par las **4 mejores quedan estadísticamente equivalentes** (~50–51 %) y\n",
-    ">    **`mobility_territory` queda peor** (47 %, p≈2×10⁻⁵). Se mantiene `mobility_only` (empata-mejor + más simple).\n",
-    ">\n",
-    "> Los datos definitivos están en `models/mate/rigorous_*.csv` (round-robin n=1500, escalera d4–d6 en\n",
-    "> `rigorous_depth56.csv`) y se documentan en `informe.pdf` §2.5 y §4. Las celdas exploratorias se conservan\n",
-    "> abajo para mostrar el proceso, pero **la conclusión vigente es la de este banner**.\n"
-   ]
-  },
-  {
    "cell_type": "code",
    "execution_count": 6,
    "metadata": {
@@ -1049,11 +1028,6 @@
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "> ⚠️ **SUPERADA.** Esta celda es de la fase exploratoria (60 partidas/par, sin Bonferroni) y su conclusión\n",
-    "> —territory \"gana\" el round-robin, depth=4 apenas mejor— **fue revertida al escalar a 1500 partidas/par**:\n",
-    "> ahí `mobility_territory` queda *peor*, las otras 4 empatan, y `depth=5` supera claramente a `depth=4`.\n",
-    "> Ver el banner del inicio de la sección y `models/mate/rigorous_*.csv`. Se conserva solo como registro del proceso.\n",
-    "\n",
     "**Conclusiones del análisis profundo:**\n",
     "\n",
     "- **Profundidad:** depth=3 supera significativamente a depth=2 contra oponentes hábiles; depth=4 es ~40× más lento pero marginalmente mejor.\n",
@@ -1277,11 +1251,7 @@
     "**`MinimaxAgent(depth=4, heuristic=eval_mobility_only, use_alpha_beta=True)`**\n",
     "→ 76/100 victorias balanceadas, p=0.0000, CI=[66.8%, 83.3%]\n",
     "\n",
-    "Este es el agente con el mayor respaldo empírico del experimento.\n",
-    "\n",
-    "> 📈 **Al escalar a 1500 partidas/par** (mínima diferencia detectable ~4 % vs ~14 % con n=100): las **4 mejores**\n",
-    "> heurísticas siguen equivalentes (~50–51 %) pero **`mobility_territory` sí queda por debajo** (47 %, p≈2×10⁻⁵).\n",
-    "> La elección de `mobility_only` se mantiene (empata-mejor + más simple). Datos en `models/mate/rigorous_significance.csv`.\n"
+    "Este es el agente con el mayor respaldo empírico del experimento."
    ]
   },
   {

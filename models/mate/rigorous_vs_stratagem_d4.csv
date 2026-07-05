@@ -1,2 +1,2 @@
 our_agent,opponent,wins_ours,n,win_rate,p_value,ci_lo,ci_hi,significant
-Minimax-AB_mob_only_d5,Stratagem,230,300,0.7667,0.0,0.7156,0.811,True
+Minimax-AB_mob_only_d4,Stratagem,347,500,0.694,0.0,0.6523,0.7328,True

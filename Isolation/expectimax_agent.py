@@ -1,27 +1,3 @@
-"""
-Agente Expectimax para el juego Isolation.
-
-Referencia: Russell & Norvig — cap. 5.5 (Games with Chance)
-            MiniMax.pdf del curso (Yovine, ORT Uruguay)
-
-Expectimax difiere de Minimax en los nodos del oponente:
-  - En lugar de asumir juego óptimo del oponente (Min),
-    se calcula la ESPERANZA de los valores de los hijos.
-  
-  Expectimax(s) =
-    U(s)                                   si esFinal(s)
-    max_{a} Expectimax(suc(s,a))           si jugador(s) = Max
-    Σ_a P(a) · Expectimax(suc(s,a))       si jugador(s) = Chance (oponente)
-
-Por defecto el oponente se modela con distribución uniforme sobre
-sus acciones posibles (P(a) = 1 / |acciones|).
-
-Cuándo usar Expectimax vs Minimax:
-  - Minimax: el oponente juega de forma óptima (conservador).
-  - Expectimax: el oponente juega aleatoriamente o de forma subóptima 
-    (más riesgoso pero potencialmente mejor recompensa promedio).
-"""
-
 import math
 from typing import Callable
 
@@ -96,10 +72,6 @@ class ExpectimaxAgent(Agent):
         """Interfaz requerida por la clase abstracta Agent."""
         return self.heuristic(board, self.player)
 
-    # ------------------------------------------------------------------
-    # Nodo Max (nuestro agente)
-    # ------------------------------------------------------------------
-
     def _max_value(self, board: Board, depth: int) -> float:
         """Nodo Max: el agente elige la acción que maximiza la utilidad."""
         self._nodes_expanded += 1
@@ -119,10 +91,6 @@ class ExpectimaxAgent(Agent):
 
         return value
 
-    # ------------------------------------------------------------------
-    # Nodo Chance (oponente modelado como aleatorio)
-    # ------------------------------------------------------------------
-
     def _chance_value(self, board: Board, depth: int) -> float:
         """
         Nodo Chance: el oponente elige una acción con distribución uniforme.
@@ -141,7 +109,7 @@ class ExpectimaxAgent(Agent):
         possible_actions = board.get_possible_actions(opponent)
 
         if not possible_actions:
-            return -INF  # Oponente sin movimientos → ganamos
+            return INF  # Oponente sin movimientos → ganamos
 
         # Distribución uniforme sobre las acciones del oponente
         prob = 1.0 / len(possible_actions)

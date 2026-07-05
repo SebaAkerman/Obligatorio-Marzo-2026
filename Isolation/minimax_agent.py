@@ -1,25 +1,3 @@
-"""
-Agente Minimax con Alpha-Beta Pruning para el juego Isolation.
-
-Referencia: Russell & Norvig — Figura 5.7 (Alpha-Beta Search)
-            MiniMax.pdf y MiniMax_1.pdf del curso (Yovine, ORT Uruguay)
-
-Minimax asume que ambos jugadores juegan de forma óptima:
-  - Max busca maximizar la utilidad (nuestro agente)
-  - Min busca minimizar la utilidad (el oponente)
-
-Alpha-Beta Pruning elimina ramas que no pueden afectar la decisión:
-  - α: mejor valor que Max puede garantizarse (inicia en -∞)
-  - β: mejor valor que Min puede garantizarse (inicia en +∞)
-  - Si en un nodo Max tenemos valor ≥ β → poda (el Min padre no elegiría aquí)
-  - Si en un nodo Min tenemos valor ≤ α → poda (el Max padre no elegiría aquí)
-
-Move Ordering (opcional):
-  Ordenar acciones por valor heurístico antes de expandirlas acelera la poda:
-  el mejor movimiento se evalúa primero → α/β se actualizan más rápido → más ramas podadas.
-  Costo: una llamada adicional a la heurística por acción en cada nodo.
-"""
-
 import math
 from typing import Callable
 
@@ -111,10 +89,6 @@ class MinimaxAgent(Agent):
         """Interfaz requerida por la clase abstracta Agent."""
         return self.heuristic(board, self.player)
 
-    # ------------------------------------------------------------------
-    # Move Ordering
-    # ------------------------------------------------------------------
-
     def _ordered_actions(self, board: Board, player: int, maximize: bool = True) -> list:
         """
         Devuelve las acciones ordenadas por valor heurístico.
@@ -133,10 +107,6 @@ class MinimaxAgent(Agent):
 
         scored.sort(key=lambda x: x[0], reverse=maximize)
         return [a for _, a in scored]
-
-    # ------------------------------------------------------------------
-    # Minimax con Alpha-Beta Pruning
-    # ------------------------------------------------------------------
 
     def _max_value(self, board: Board, depth: int, alpha: float, beta: float) -> float:
         """Nodo Max en el árbol Minimax."""
@@ -182,10 +152,6 @@ class MinimaxAgent(Agent):
             beta = min(beta, value)
 
         return value
-
-    # ------------------------------------------------------------------
-    # Minimax puro (sin poda) — para comparación y análisis
-    # ------------------------------------------------------------------
 
     def _max_value_pure(self, board: Board, depth: int) -> float:
         self._nodes_expanded += 1

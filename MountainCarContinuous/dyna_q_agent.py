@@ -1,23 +1,3 @@
-"""
-Agente Dyna-Q para MountainCarContinuous-v0.
-
-Referencia: Sutton & Barto — Reinforcement Learning: An Introduction
-            Capítulos 8.1 y 8.2 (Dyna: Integrated Planning, Acting, and Learning)
-
-Dyna-Q extiende Q-Learning integrando planificación, actuación y aprendizaje:
-
-    Por cada paso real (s, a, r, s'):
-        1. Actualizar Q con la experiencia real  ← igual que Q-Learning
-        2. Actualizar el modelo: Model(s, a) ← (r, s')
-        3. Repetir n veces (planificación simulada):
-            - Samplear (s̃, ã) visitado anteriormente
-            - Obtener (r̃, s̃') del modelo
-            - Actualizar Q con esa experiencia simulada
-
-Esto permite aprender más rápido reutilizando experiencias pasadas.
-Con n=0 Dyna-Q se reduce a Q-Learning puro.
-"""
-
 import pickle
 import random
 from pathlib import Path
@@ -79,10 +59,6 @@ class DynaQAgent:
         # Historial de entrenamiento
         self.training_rewards: list[float] = []
 
-    # ------------------------------------------------------------------
-    # Política ε-greedy  (misma firma que QLearningAgent)
-    # ------------------------------------------------------------------
-
     def next_action(self, obs: np.ndarray) -> np.ndarray:
         """
         Selecciona una acción con política ε-greedy usando self.epsilon actual.
@@ -107,10 +83,6 @@ class DynaQAgent:
         if random.random() < self.epsilon:
             return self.disc.sample_action_index()
         return int(np.argmax(self.Q[state]))
-
-    # ------------------------------------------------------------------
-    # Actualización Q
-    # ------------------------------------------------------------------
 
     def _q_update(
         self,
@@ -156,10 +128,6 @@ class DynaQAgent:
             s, a = random.choice(self._visited)
             r_sim, s_next_sim, done_sim = self.model[(s, a)]
             self._q_update(s, a, r_sim, s_next_sim, done_sim)
-
-    # ------------------------------------------------------------------
-    # Entrenamiento  (misma firma que QLearningAgent)
-    # ------------------------------------------------------------------
 
     def train_agent(
         self,
@@ -224,10 +192,6 @@ class DynaQAgent:
 
         return self.training_rewards
 
-    # ------------------------------------------------------------------
-    # Evaluación  (misma firma que QLearningAgent)
-    # ------------------------------------------------------------------
-
     def test_agent(
         self,
         env: gym.Env,
@@ -281,10 +245,6 @@ class DynaQAgent:
             f"Éxitos: {results['success_rate']:.0%}"
         )
         return results
-
-    # ------------------------------------------------------------------
-    # Persistencia
-    # ------------------------------------------------------------------
 
     def save(self, path: str) -> None:
         """Guarda el modelo en formato .pkl."""

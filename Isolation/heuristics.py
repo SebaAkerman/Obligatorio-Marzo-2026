@@ -1,28 +1,4 @@
-"""
-Funciones de evaluación heurística para el juego Isolation.
-
-Una función de evaluación h(board, player) estima la utilidad de un
-estado no terminal desde la perspectiva de `player`.
-
-Referencia: Russell & Norvig — cap. 5 (Juegos de Suma Cero)
-            MiniMax.pdf y MiniMax_1.pdf del curso
-
-Criterios de diseño:
-  - h debe ser rápida de calcular (se llama en cada nodo del árbol).
-  - h debe ser informativa: capturar ventajas reales del jugador.
-  - Experimentar con combinaciones ponderadas de distintas señales.
-
-Convención de signos:
-  Valores positivos → favorable para `player` (Max)
-  Valores negativos → favorable para el oponente (Min)
-"""
-
 from board import Board
-
-
-# ---------------------------------------------------------------------------
-# Heurísticas primitivas
-# ---------------------------------------------------------------------------
 
 def h_mobility(board: Board, player: int) -> float:
     """
@@ -91,11 +67,6 @@ def h_aggressive(board: Board, player: int) -> float:
     """
     my_moves = len(board.get_possible_actions(player))
     return float(my_moves)
-
-
-# ---------------------------------------------------------------------------
-# Funciones de evaluación compuestas
-# ---------------------------------------------------------------------------
 
 def eval_mobility_only(board: Board, player: int) -> float:
     """Evalúa únicamente por diferencia de movilidad."""
@@ -227,10 +198,6 @@ def eval_mobility_territory(board: Board, player: int,
     """
     return w_mob * h_mobility(board, player) + w_ter * h_territory(board, player)
 
-
-# ---------------------------------------------------------------------------
-# Catálogo de funciones de evaluación para experimentación
-# ---------------------------------------------------------------------------
 
 HEURISTICS = {
     "mobility_only": eval_mobility_only,
