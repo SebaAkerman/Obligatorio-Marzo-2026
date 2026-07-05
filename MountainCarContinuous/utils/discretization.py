@@ -47,10 +47,6 @@ class Discretizer:
         self.vel_bins = np.linspace(self.VEL_MIN, self.VEL_MAX, n_vel_bins)
         self.actions = np.linspace(self.ACT_MIN, self.ACT_MAX, n_actions)
 
-    # ------------------------------------------------------------------
-    # Observaciones
-    # ------------------------------------------------------------------
-
     def obs_to_state(self, obs: np.ndarray) -> tuple[int, int]:
         """Convierte una observación continua en un índice de estado discreto."""
         x, vel = obs
@@ -63,9 +59,6 @@ class Discretizer:
         """Forma de la dimensión de estados en la tabla Q."""
         return (self.n_pos_bins + 1, self.n_vel_bins + 1)
 
-    # ------------------------------------------------------------------
-    # Acciones
-    # ------------------------------------------------------------------
 
     def action_index_to_continuous(self, idx: int) -> np.ndarray:
         """Convierte un índice de acción discreta en la acción continua para el ambiente."""
