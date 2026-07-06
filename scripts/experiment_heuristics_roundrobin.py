@@ -26,11 +26,11 @@ DEPTH = 3
 N_GAMES = 30  # por sentido (60 total entre cada par: 30 como P1 + 30 como P2)
 
 HEURISTICS = {
-    "mob_only":       eval_mobility_only,
-    "mob_center":     eval_mobility_center,
-    "full":           eval_full,
-    "territory":      eval_territory,
-    "mob_territory":  eval_mobility_territory,
+    "mob_only": eval_mobility_only,
+    "mob_center": eval_mobility_center,
+    "full": eval_full,
+    "territory": eval_territory,
+    "mob_territory": eval_mobility_territory,
 }
 NAMES = list(HEURISTICS.keys())
 
@@ -74,7 +74,7 @@ for i, h1 in enumerate(NAMES):
         win_matrix[j][i] += w2
         total_games[i][j] += N_GAMES
         total_games[j][i] += N_GAMES
-        # h1 como P2 (simetría — evita doble conteo ya cubierto por [j,i])
+        # h1 como P2 (simetría - evita doble conteo ya cubierto por [j,i])
         print(f"[{h1}:{w1} {h2}:{w2}]")
 
 # Puntos totales (ignorando duplicados de simetría)
@@ -114,7 +114,7 @@ sns.heatmap(
     mask=mask,
     cbar_kws={"label": "Win rate (fila vs columna)"},
 )
-ax.set_title(f"Round-Robin de Heurísticas — depth={DEPTH}, {N_GAMES} partidas/par/rol",
+ax.set_title(f"Round-Robin de Heurísticas - depth={DEPTH}, {N_GAMES} partidas/par/rol",
              fontsize=12, fontweight="bold")
 ax.set_xlabel("Oponente (columna)")
 ax.set_ylabel("Jugador (fila)")

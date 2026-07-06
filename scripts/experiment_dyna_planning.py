@@ -7,7 +7,7 @@ y compara curvas de aprendizaje y rendimiento final.
 Mismos hiperparámetros en todos para comparación justa:
   - 20×20 bins, 15 acciones
   - α=0.2, γ=0.99, ε₀=1.0, decay=0.9995, ε_min=0.05
-  - q_init=0.0 (sin inicialización optimista — Dyna-Q no la necesita)
+  - q_init=0.0 (sin inicialización optimista - Dyna-Q no la necesita)
   - 3000 episodios (suficiente para ver diferencias claras entre valores de n)
 
 Uso (desde MountainCarContinuous/):
@@ -49,7 +49,7 @@ colors = {0: "#95a5a6", 1: "#e74c3c", 5: "#e67e22",
 results = []
 all_rewards = {}
 
-print(f"DynaQ n_planning sweep — {EPISODES} eps, eval {EVAL_EPISODES} eps\n")
+print(f"DynaQ n_planning sweep - {EPISODES} eps, eval {EVAL_EPISODES} eps\n")
 
 for n in N_PLANNING_VALUES:
     label = f"n={n}" + (" (Q-Learning puro)" if n == 0 else "")
@@ -129,7 +129,7 @@ ax2.legend(loc="upper left")
 ax2_r.legend(loc="upper right")
 ax2.grid(alpha=0.3)
 
-fig.suptitle(f"Experimento Dyna-Q n_planning — {EPISODES} episodios, α=0.2, γ=0.99, decay=0.9995",
+fig.suptitle(f"Experimento Dyna-Q n_planning - {EPISODES} episodios, α=0.2, γ=0.99, decay=0.9995",
              fontsize=12, fontweight="bold")
 plt.tight_layout()
 fig.savefig(str(FIGURES / "dyna_planning_sweep.png"), dpi=150, bbox_inches="tight")

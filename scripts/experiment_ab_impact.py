@@ -126,7 +126,7 @@ axes[1].legend()
 axes[1].grid(alpha=0.3)
 axes[1].set_xticks(DEPTHS)
 
-fig.suptitle(f"Alpha-Beta Pruning vs Minimax Puro — {N_GAMES} partidas por configuración",
+fig.suptitle(f"Alpha-Beta Pruning vs Minimax Puro - {N_GAMES} partidas por configuración",
              fontsize=13, fontweight="bold")
 plt.tight_layout()
 fig.savefig(str(FIGURES / "ab_impact.png"), dpi=150, bbox_inches="tight")

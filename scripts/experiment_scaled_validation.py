@@ -1,5 +1,5 @@
 """
-Validacion escalada (~8h) — reproduce las corridas de alta potencia:
+Validacion escalada (~8h) - reproduce las corridas de alta potencia:
   - Round-robin heuristicas 1500/par (Bonferroni), depth sweep 500, MM vs EX ampliado
   - Agente final vs Stratagem, escalera de profundidad d5/d6
   - Dyna-Q multi-seed (q0/q1) y planning sweep multi-seed

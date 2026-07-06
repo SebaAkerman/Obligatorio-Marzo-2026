@@ -3,17 +3,17 @@
 Genera figuras del experimento riguroso de MATE y corre experimentos complementarios.
 
 Experimentos adicionales (antes no registrados):
-  1. Agente final (mob_only d4) vs Random        → confirmar dominancia del agente final
-  2. Mirror match: mob_only d4 vs mob_only d4     → cuantificar ventaja del P1 a depth=4
+  1. Agente final (mob_only d4) vs Random: confirmar dominancia del agente final
+  2. Mirror match: mob_only d4 vs mob_only d4: cuantificar ventaja del P1 a depth=4
 
 Figuras generadas:
-  reports/figures/rigorous_depth_sweep.png      — sweep depth × heurística (vs baseline d3)
-  reports/figures/rigorous_roundrobin.png        — round-robin con Wilson CIs y p-valores
-  reports/figures/rigorous_minimax_vs_exp.png    — Minimax vs Expectimax con CIs
-  reports/figures/rigorous_vs_stratagem.png      — agente final vs Stratagem (depth=4)
+  reports/figures/rigorous_depth_sweep.png      - sweep depth × heurística (vs baseline d3)
+  reports/figures/rigorous_roundrobin.png        - round-robin con Wilson CIs y p-valores
+  reports/figures/rigorous_minimax_vs_exp.png    - Minimax vs Expectimax con CIs
+  reports/figures/rigorous_vs_stratagem.png      - agente final vs Stratagem (depth=4)
 
 Datos adicionales:
-  models/mate/rigorous_extra.csv                 — final vs Random + mirror match
+  models/mate/rigorous_extra.csv                 - final vs Random + mirror match
 
 Ejecución (desde Isolation/):
     python ../scripts/generate_mate_figures.py
@@ -42,16 +42,16 @@ except Exception:
     HAS_STRATAGEM = False
 
 FIGURES = Path(__file__).parent.parent / "reports" / "figures"
-MODELS  = Path(__file__).parent.parent / "models" / "mate"
+MODELS = Path(__file__).parent.parent / "models" / "mate"
 FIGURES.mkdir(parents=True, exist_ok=True)
 
 STYLE = {
-    "sig":    "#2196F3",   # azul — significativo
-    "ns":     "#B0BEC5",   # gris — no significativo
-    "win":    "#43A047",   # verde — gana
-    "lose":   "#E53935",   # rojo — pierde
-    "draw":   "#FB8C00",   # naranja — empate/n.s.
-    "strat":  "#6A1B9A",   # violeta — vs Stratagem
+    "sig": "#2196F3",  # azul, significativo
+    "ns": "#B0BEC5",  # gris, no significativo
+    "win": "#43A047",  # verde, gana
+    "lose": "#E53935",  # rojo, pierde
+    "draw": "#FB8C00",  # naranja, empate/n.s.
+    "strat": "#6A1B9A",  # violeta, vs Stratagem
 }
 
 # Utilidades
@@ -76,7 +76,7 @@ def binom_p(wins, n, p0=0.5):
     if n == 0:
         return 1.0
     se = math.sqrt(n * p0 * (1 - p0))
-    z  = (wins - n * p0) / se
+    z = (wins - n * p0) / se
     return 2.0 * (1.0 - normal_cdf(abs(z)))
 
 def play_one(f1, f2):
@@ -129,7 +129,7 @@ def run_extra_experiments():
     t0 = time.time()
     res = balanced(mm_final(), lambda p: RandomAgent(p), 200)
     t = time.time() - t0
-    print(f"  → {res['wins_a']}/100  wr={res['wr_a']:.3f}  "
+    print(f"  {res['wins_a']}/100  wr={res['wr_a']:.3f}  "
           f"CI=[{res['ci_lo']:.3f},{res['ci_hi']:.3f}]  "
           f"p={res['p']:.5f}  ({t:.0f}s)")
     extra_rows.append({
@@ -167,7 +167,7 @@ def run_extra_experiments():
     p_mirror = binom_p(p1_wins, 100)
     ci_lo_m, ci_hi_m = wilson_ci(p1_wins, 100)
     t = time.time() - t0
-    print(f"  → P1 gana {p1_wins}/100  wr={p1_wins/100:.3f}  "
+    print(f"  P1 gana {p1_wins}/100  wr={p1_wins/100:.3f}  "
           f"CI=[{ci_lo_m:.3f},{ci_hi_m:.3f}]  p={p_mirror:.5f}  ({t:.0f}s)")
     extra_rows.append({
         "experiment": "mirror_match_p1_advantage",
@@ -185,7 +185,7 @@ def run_extra_experiments():
         w = csv.DictWriter(f, fieldnames=extra_rows[0].keys())
         w.writeheader()
         w.writerows(extra_rows)
-    print(f"\n  → Guardado: {out.name}")
+    print(f"\n  Guardado: {out.name}")
     return extra_rows
 
 # Figura 1: Depth Sweep
@@ -242,7 +242,7 @@ def fig_depth_sweep():
     ax.set_ylim(0.15, 1.05)
     ax.set_ylabel("Win rate vs mob_only d3")
     ax.set_title("Sweep de Profundidad × Heurística vs Baseline (mob_only depth=3)\n"
-                 "500 partidas balanceadas por celda — ** p<0.01, * p<0.05, n.s. p≥0.05")
+                 "500 partidas balanceadas por celda - ** p<0.01, * p<0.05, n.s. p≥0.05")
 
     legend_elements = [
         mpatches.Patch(color=STYLE["sig"],  label="Significativo (mejor, p<0.01)"),
@@ -255,7 +255,7 @@ def fig_depth_sweep():
     out = FIGURES / "rigorous_depth_sweep.png"
     plt.savefig(out, dpi=150)
     plt.close()
-    print(f"  → {out.name}")
+    print(f"  {out.name}")
 
 # Figura 2: Round-Robin
 
@@ -264,7 +264,7 @@ def fig_roundrobin():
     summary.sort(key=lambda r: float(r["win_rate"]), reverse=True)
 
     names = [r["heuristic"] for r in summary]
-    wrs   = [float(r["win_rate"]) for r in summary]
+    wrs = [float(r["win_rate"]) for r in summary]
     ci_lo = [float(r["ci_lo"]) for r in summary]
     ci_hi = [float(r["ci_hi"]) for r in summary]
     err_lo = [wr - lo for wr, lo in zip(wrs, ci_lo)]
@@ -290,7 +290,7 @@ def fig_roundrobin():
     ax1.set_xticklabels(names, rotation=15, ha="right", fontsize=9)
     ax1.set_ylim(0.35, 0.70)
     ax1.set_ylabel("Win rate (round-robin)")
-    ax1.set_title("Win rate global — Round-Robin Riguroso\n"
+    ax1.set_title("Win rate global - Round-Robin Riguroso\n"
                   "(1500 partidas/par, Bonferroni α=0.005)")
     ax1.legend(fontsize=8)
     ax1.grid(axis="y", alpha=0.3)
@@ -336,7 +336,7 @@ def fig_roundrobin():
     out = FIGURES / "rigorous_roundrobin.png"
     plt.savefig(out, dpi=150)
     plt.close()
-    print(f"  → {out.name}")
+    print(f"  {out.name}")
 
 # Figura 3: Minimax vs Expectimax
 
@@ -344,10 +344,10 @@ def fig_minimax_vs_exp():
     rows = read_csv(MODELS / "rigorous_minimax_vs_exp.csv")
 
     labels = [f"{r['agent_a']}\nvs {r['agent_b']}" for r in rows]
-    wrs    = [float(r["win_rate_a"]) for r in rows]
-    pvals  = [float(r["p_value"]) for r in rows]
-    ci_lo  = [float(r["ci_lo"]) for r in rows]
-    ci_hi  = [float(r["ci_hi"]) for r in rows]
+    wrs = [float(r["win_rate_a"]) for r in rows]
+    pvals = [float(r["p_value"]) for r in rows]
+    ci_lo = [float(r["ci_lo"]) for r in rows]
+    ci_hi = [float(r["ci_hi"]) for r in rows]
     err_lo = [wr - lo for wr, lo in zip(wrs, ci_lo)]
     err_hi = [hi - wr for wr, hi in zip(wrs, ci_hi)]
 
@@ -382,7 +382,7 @@ def fig_minimax_vs_exp():
     ax.set_xticklabels(labels, fontsize=9)
     ax.set_ylim(0.20, 1.10)
     ax.set_ylabel("Win rate de Minimax")
-    ax.set_title("Minimax vs Expectimax — 200-300 partidas balanceadas por matchup\n"
+    ax.set_title("Minimax vs Expectimax - 200-300 partidas balanceadas por matchup\n"
                  "Heurística: mob_only | Barra = win rate de Minimax + IC Wilson 95%")
 
     legend_elements = [
@@ -396,20 +396,20 @@ def fig_minimax_vs_exp():
     out = FIGURES / "rigorous_minimax_vs_exp.png"
     plt.savefig(out, dpi=150)
     plt.close()
-    print(f"  → {out.name}")
+    print(f"  {out.name}")
 
 # Figura 4: vs Stratagem
 
 def fig_vs_stratagem(extra_rows=None):
     strat = read_csv(MODELS / "rigorous_vs_stratagem.csv")[0]
-    wr    = float(strat["win_rate"])
+    wr = float(strat["win_rate"])
     ci_lo = float(strat["ci_lo"])
     ci_hi = float(strat["ci_hi"])
 
     fig, ax = plt.subplots(figsize=(8, 4))
 
     agents = ["Minimax-AB\nmob_only d5\nvs Stratagem"]
-    wrs    = [wr]
+    wrs = [wr]
     err_lo = [wr - ci_lo]
     err_hi = [ci_hi - wr]
     colors = [STYLE["strat"]]
@@ -441,21 +441,21 @@ def fig_vs_stratagem(extra_rows=None):
     ax.set_ylim(0.3, 1.15)
     ax.set_ylabel("Win rate (partidas balanceadas)")
     ax.set_title("Agente Final: Minimax-AB mob_only depth=5\n"
-                 "200-300 partidas balanceadas — IC Wilson 95%")
+                 "200-300 partidas balanceadas - IC Wilson 95%")
     ax.legend(fontsize=8)
     ax.grid(axis="y", alpha=0.3)
     plt.tight_layout()
     out = FIGURES / "rigorous_vs_stratagem.png"
     plt.savefig(out, dpi=150)
     plt.close()
-    print(f"  → {out.name}")
+    print(f"  {out.name}")
 
 # Figura 5: Resumen ejecutivo (tabla visual)
 
 def fig_summary(extra_rows=None):
     """Un único gráfico de resumen que muestra los hallazgos principales de MATE."""
     fig, axes = plt.subplots(1, 3, figsize=(16, 5))
-    fig.suptitle("PROYECTO MATE — Resumen Experimental\n"
+    fig.suptitle("PROYECTO MATE - Resumen Experimental\n"
                  "MinimaxAgent con Alpha-Beta Pruning | Isolation 4×4",
                  fontsize=12, fontweight="bold")
 
@@ -479,7 +479,7 @@ def fig_summary(extra_rows=None):
     ax.legend(fontsize=7)
     ax.grid(axis="y", alpha=0.3)
 
-    # Panel 2: Depth sweep — solo los significativos
+    # Panel 2: Depth sweep - solo los significativos
     ax = axes[1]
     ds = read_csv(MODELS / "rigorous_depth_sweep.csv")
     key_configs = [("mob_only", 2), ("mob_only", 3), ("mob_only", 4),
@@ -573,14 +573,14 @@ def fig_summary(extra_rows=None):
     out = FIGURES / "rigorous_summary.png"
     plt.savefig(out, dpi=150)
     plt.close()
-    print(f"  → {out.name}")
+    print(f"  {out.name}")
 
 
 # Main
 
 def main():
     print("="*60)
-    print("GENERACIÓN DE FIGURAS — PROYECTO MATE")
+    print("GENERACIÓN DE FIGURAS - PROYECTO MATE")
     print("="*60)
 
     # Experimentos complementarios
@@ -596,7 +596,7 @@ def main():
     fig_vs_stratagem(extra_rows)
     fig_summary(extra_rows)
 
-    print("\n✓ Completado. Figuras guardadas en reports/figures/")
+    print("\nCompletado. Figuras guardadas en reports/figures/")
     print("  rigorous_depth_sweep.png")
     print("  rigorous_roundrobin.png")
     print("  rigorous_minimax_vs_exp.png")

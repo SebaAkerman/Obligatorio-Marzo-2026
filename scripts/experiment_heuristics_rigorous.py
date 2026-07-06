@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Experimento riguroso de comparación de heurísticas — Proyecto MATE.
+Experimento riguroso de comparación de heurísticas - Proyecto MATE.
 
 Diseño estadístico:
   - Round-robin completo: C(5,2) = 10 pares, 1500 partidas/par (750 P1 + 750 P2)
@@ -14,18 +14,18 @@ Fases:
   3. Minimax vs Expectimax (100 partidas balanceadas)
   4. Mejor agente vs Stratagem (referencia de la cátedra)
 
-Referencia: Russell & Norvig (2020) cap. 5 — Adversarial Search and Games
-            Sutton & Barto (2020) — metodología experimental en IA
+Referencia: Russell & Norvig (2020) cap. 5 - Adversarial Search and Games
+            Sutton & Barto (2020) - metodología experimental en IA
 
 Ejecución (desde Isolation/):
     python ../scripts/experiment_heuristics_rigorous.py
 
 Outputs (../models/mate/):
-    rigorous_matchup_matrix.csv   — wins[H_i][H_j] para todos los pares
-    rigorous_significance.csv     — p-values, significancia post-Bonferroni
-    rigorous_depth_sweep.csv      — win rate por depth x heurística
-    rigorous_minimax_vs_exp.csv   — comparación Minimax vs Expectimax
-    rigorous_vs_stratagem.csv     — benchmark vs agente de referencia
+    rigorous_matchup_matrix.csv   - wins[H_i][H_j] para todos los pares
+    rigorous_significance.csv     - p-values, significancia post-Bonferroni
+    rigorous_depth_sweep.csv      - win rate por depth x heurística
+    rigorous_minimax_vs_exp.csv   - comparación Minimax vs Expectimax
+    rigorous_vs_stratagem.csv     - benchmark vs agente de referencia
 """
 
 import sys, math, time, csv
@@ -57,18 +57,18 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Constantes
 HEURISTICS_RR = {
-    "mob_only":        eval_mobility_only,
-    "mob_center":      eval_mobility_center,
-    "full":            eval_full,
-    "territory":       eval_territory,
-    "mob_territory":   eval_mobility_territory,
+    "mob_only": eval_mobility_only,
+    "mob_center": eval_mobility_center,
+    "full": eval_full,
+    "territory": eval_territory,
+    "mob_territory": eval_mobility_territory,
 }
-N_RR        = 1500  # partidas por par en round-robin (750 P1 + 750 P2) — alta potencia
-N_DEPTH     = 500   # partidas por celda en sweep de profundidad
-N_MV_EXP    = 300   # partidas minimax vs expectimax
-N_STRATAGEM = 300   # partidas vs Stratagem
-ALPHA       = 0.05  # nivel de significancia global
-DEPTH_RR    = 3     # profundidad para el round-robin
+N_RR = 1500  # partidas por par en round-robin (750 P1 + 750 P2) - alta potencia
+N_DEPTH = 500  # partidas por celda en sweep de profundidad
+N_MV_EXP = 300  # partidas minimax vs expectimax
+N_STRATAGEM = 300  # partidas vs Stratagem
+ALPHA = 0.05  # nivel de significancia global
+DEPTH_RR = 3  # profundidad para el round-robin
 
 # Utilidades estadísticas
 
@@ -86,7 +86,7 @@ def binomial_p_two_sided(wins: int, n: int, p0: float = 0.5) -> float:
     if n == 0:
         return 1.0
     se = math.sqrt(n * p0 * (1 - p0))
-    z  = (wins - n * p0) / se
+    z = (wins - n * p0) / se
     return 2.0 * (1.0 - normal_cdf(abs(z)))
 
 
@@ -97,8 +97,8 @@ def wilson_ci(wins: int, n: int, confidence: float = 0.95) -> tuple[float, float
     """
     if n == 0:
         return (0.0, 1.0)
-    z    = 1.96 if confidence == 0.95 else 2.576
-    p    = wins / n
+    z = 1.96 if confidence == 0.95 else 2.576
+    p = wins / n
     denom = 1 + z**2 / n
     center = (p + z**2 / (2 * n)) / denom
     margin = z * math.sqrt(p * (1 - p) / n + z**2 / (4 * n**2)) / denom
@@ -150,7 +150,7 @@ def balanced_match(factory_a, factory_b, n_games: int) -> dict:
             wins_a += 1
 
     wins_b = n_games - wins_a
-    p_val  = binomial_p_two_sided(wins_a, n_games)
+    p_val = binomial_p_two_sided(wins_a, n_games)
     ci_lo, ci_hi = wilson_ci(wins_a, n_games)
 
     return {
@@ -188,7 +188,7 @@ def phase1_roundrobin():
     alpha_bonferroni = ALPHA / n_pairs  # corrección Bonferroni
 
     print(f"\n{'='*65}")
-    print(f"FASE 1 — Round-Robin completo (depth={DEPTH_RR})")
+    print(f"FASE 1 - Round-Robin completo (depth={DEPTH_RR})")
     print(f"  Heurísticas : {names}")
     print(f"  Partidas/par: {N_RR} (50 P1 + 50 P2)")
     print(f"  α Bonferroni: {alpha_bonferroni:.4f} ({n_pairs} pares)")
@@ -239,7 +239,7 @@ def phase1_roundrobin():
     print(f"  {'-'*60}")
     summary_rows = []
     for name in names:
-        total_wins  = sum(wins_matrix[name].values())
+        total_wins = sum(wins_matrix[name].values())
         total_games = (len(names) - 1) * N_RR
         wr = total_wins / total_games
         ci_lo, ci_hi = wilson_ci(total_wins, total_games)
@@ -293,7 +293,7 @@ def phase2_depth_sweep(rr_summary: list):
     como baseline. Responde: ¿compensa la profundidad a una heurística débil?
     """
     print(f"\n{'='*65}")
-    print("FASE 2 — Sweep profundidad × heurística")
+    print("FASE 2 - Sweep profundidad × heurística")
     print(f"  Baseline : mob_only depth=3")
     print(f"  Partidas : {N_DEPTH} por celda (balanceadas)")
     print(f"{'='*65}")
@@ -346,7 +346,7 @@ def phase2_depth_sweep(rr_summary: list):
 
 def phase3_minimax_vs_expectimax():
     print(f"\n{'='*65}")
-    print("FASE 3 — Minimax vs Expectimax")
+    print("FASE 3 - Minimax vs Expectimax")
     print(f"  Partidas: {N_MV_EXP} por configuración (balanceadas)")
     print(f"{'='*65}")
 
@@ -396,17 +396,17 @@ def phase4_vs_stratagem(rr_summary: list, depth_rows: list):
 
     # Elegir el mejor agente del sweep de profundidad (mayor win_rate vs baseline)
     best_depth_row = max(depth_rows, key=lambda r: r["win_rate"])
-    best_h    = best_depth_row["heuristic"]
-    best_d    = best_depth_row["depth"]
-    best_hfn  = HEURISTICS_RR[best_h]
+    best_h = best_depth_row["heuristic"]
+    best_d = best_depth_row["depth"]
+    best_hfn = HEURISTICS_RR[best_h]
 
     print(f"\n{'='*65}")
-    print(f"FASE 4 — Mejor agente vs Stratagem (cátedra)")
+    print(f"FASE 4 - Mejor agente vs Stratagem (cátedra)")
     print(f"  Agente propio : Minimax-AB, {best_h}, depth={best_d}")
     print(f"  Partidas      : {N_STRATAGEM} (balanceadas)")
     print(f"{'='*65}")
 
-    our_factory  = minimax_factory(best_hfn, best_d)
+    our_factory = minimax_factory(best_hfn, best_d)
     strat_factory = lambda p: Stratagem(p)
 
     t0 = time.time()
@@ -447,7 +447,7 @@ def _write_csv(rows: list, path: Path):
         writer = csv.DictWriter(f, fieldnames=rows[0].keys())
         writer.writeheader()
         writer.writerows(rows)
-    print(f"  → Guardado: {path.name}")
+    print(f"  Guardado: {path.name}")
 
 
 # Main
@@ -455,14 +455,14 @@ def _write_csv(rows: list, path: Path):
 def main():
     t_global = time.time()
     print("=" * 65)
-    print("EXPERIMENTO RIGUROSO — PROYECTO MATE")
+    print("EXPERIMENTO RIGUROSO - PROYECTO MATE")
     print("Isolation 4×4 | Minimax con Alpha-Beta Pruning")
     print("=" * 65)
 
     rr_summary, any_sig = phase1_roundrobin()
-    depth_rows           = phase2_depth_sweep(rr_summary)
-    mv_exp_rows          = phase3_minimax_vs_expectimax()
-    vs_strat_rows        = phase4_vs_stratagem(rr_summary, depth_rows)
+    depth_rows = phase2_depth_sweep(rr_summary)
+    mv_exp_rows = phase3_minimax_vs_expectimax()
+    vs_strat_rows = phase4_vs_stratagem(rr_summary, depth_rows)
 
     total = time.time() - t_global
     print(f"\n{'='*65}")
