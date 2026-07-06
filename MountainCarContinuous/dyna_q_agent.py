@@ -9,21 +9,8 @@ from utils.discretization import Discretizer
 
 
 class DynaQAgent:
-    """
-    Agente Dyna-Q tabular. Sigue la misma interfaz que QLearningAgent
-    (train_agent / test_agent / next_action) para facilitar la comparación.
-
-    Parámetros de __init__
-    ----------------------
-    n_pos_bins : int
-        Número de bins para discretizar la posición x.
-    n_vel_bins : int
-        Número de bins para discretizar la velocidad.
-    n_actions : int
-        Número de acciones discretas uniformes en [-1, 1].
-    n_planning_steps : int
-        Pasos de planificación simulada por cada paso real (n en Dyna-Q).
-    """
+    # Dyna-Q tabular. Sigue la misma interfaz que QLearningAgent
+    # (train_agent / test_agent / next_action) para poder compararlos directo.
 
     def __init__(
         self,
@@ -41,33 +28,23 @@ class DynaQAgent:
         self.n_planning = n_planning_steps
         self.q_init = q_init
 
-        # Tabla Q — q_init>0 aplica inicialización optimista (favorece exploración)
         self.Q = np.full((*self.disc.state_shape, self.disc.n_actions), q_init)
 
-        # Modelo del ambiente: (estado, acción) → (reward, siguiente_estado, done)
+        # modelo del ambiente: (estado, acción) -> (reward, siguiente_estado, done)
         self.model: dict[tuple, tuple] = {}
 
-        # Registro de pares (s, a) visitados para samplear en planificación
+        # pares (s, a) ya vistos, para samplear en la fase de planificación
         self._visited: list[tuple] = []
-        self._visited_set: set[tuple] = set()  # O(1) membership check
+        self._visited_set: set[tuple] = set()
 
-        # Hiperparámetros — se setean en train_agent
+        # se pisan en train_agent
         self.alpha: float = 0.1
         self.gamma: float = 0.99
         self.epsilon: float = 1.0
 
-        # Historial de entrenamiento
         self.training_rewards: list[float] = []
 
     def next_action(self, obs: np.ndarray) -> np.ndarray:
-        """
-        Selecciona una acción con política ε-greedy usando self.epsilon actual.
-
-        Devuelve
-        --------
-        np.ndarray
-            Acción continua lista para pasar a env.step().
-        """
         state = self.disc.obs_to_state(obs)
 
         if random.random() < self.epsilon:
@@ -78,7 +55,6 @@ class DynaQAgent:
         return self.disc.action_index_to_continuous(action_idx)
 
     def _action_index(self, obs: np.ndarray) -> int:
-        """Igual que next_action pero devuelve el índice (para actualizar Q)."""
         state = self.disc.obs_to_state(obs)
         if random.random() < self.epsilon:
             return self.disc.sample_action_index()
@@ -92,14 +68,10 @@ class DynaQAgent:
         next_state: tuple,
         done: bool,
     ) -> None:
-        """Regla de actualización Q-Learning (usada tanto en paso real como simulado)."""
+        """Regla de Q-Learning, se usa tanto para el paso real como para los simulados."""
         max_next_q = 0.0 if done else float(np.max(self.Q[next_state]))
         target = reward + self.gamma * max_next_q
         self.Q[state][action_idx] += self.alpha * (target - self.Q[state][action_idx])
-
-    # ------------------------------------------------------------------
-    # Paso Dyna-Q completo (real + planificación)
-    # ------------------------------------------------------------------
 
     def _dyna_step(
         self,
@@ -112,16 +84,16 @@ class DynaQAgent:
         state = self.disc.obs_to_state(obs)
         next_state = self.disc.obs_to_state(next_obs)
 
-        # 1. Actualización Q con experiencia real
+        # paso real
         self._q_update(state, action_idx, reward, next_state, done)
 
-        # 2. Actualizar modelo
+        # actualizar el modelo aprendido
         self.model[(state, action_idx)] = (reward, next_state, done)
         if (state, action_idx) not in self._visited_set:
             self._visited_set.add((state, action_idx))
             self._visited.append((state, action_idx))
 
-        # 3. n pasos de planificación simulada
+        # n pasos de planificación simulada sobre el modelo
         for _ in range(self.n_planning):
             if not self._visited:
                 break
@@ -142,18 +114,6 @@ class DynaQAgent:
         verbose: bool = True,
         log_every: int = 200,
     ) -> list[float]:
-        """
-        Entrena el agente con Dyna-Q durante `episodes` episodios.
-
-        Parámetros principales (mismos que QLearningAgent.train_agent)
-        ---------------------------------------------------------------
-        env, episodes, epsilon, gamma, alpha, epsilon_decay, epsilon_min
-
-        Devuelve
-        --------
-        list[float]
-            Recompensa total por episodio.
-        """
         self.alpha = alpha
         self.gamma = gamma
         self.epsilon = epsilon
@@ -199,13 +159,7 @@ class DynaQAgent:
         max_steps: int = 999,
         render: bool = False,
     ) -> dict[str, float]:
-        """
-        Evalúa el agente con política greedy pura (ε = 0).
-
-        Devuelve
-        --------
-        dict con mean_reward, std_reward y success_rate.
-        """
+        """Evalúa con política greedy pura (epsilon = 0)."""
         saved_epsilon = self.epsilon
         self.epsilon = 0.0
 
@@ -247,7 +201,6 @@ class DynaQAgent:
         return results
 
     def save(self, path: str) -> None:
-        """Guarda el modelo en formato .pkl."""
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         with open(path, "wb") as f:
             pickle.dump(
@@ -270,7 +223,6 @@ class DynaQAgent:
 
     @classmethod
     def load(cls, path: str) -> "DynaQAgent":
-        """Carga un modelo previamente guardado."""
         with open(path, "rb") as f:
             data = pickle.load(f)
         disc: Discretizer = data["disc"]

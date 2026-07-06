@@ -10,18 +10,7 @@ INF = math.inf
 
 
 class ExpectimaxAgent(Agent):
-    """
-    Agente que decide usando Expectimax.
-
-    Parámetros
-    ----------
-    player : int
-        Número de jugador (1 o 2).
-    max_depth : int
-        Profundidad máxima del árbol.
-    heuristic : Callable
-        Función de evaluación h(board, player) → float.
-    """
+    # asume que el rival juega al azar (uniforme) en vez de jugar óptimo como en minimax
 
     def __init__(
         self,
@@ -35,19 +24,6 @@ class ExpectimaxAgent(Agent):
         self._nodes_expanded = 0
 
     def next_action(self, obs: Board):
-        """
-        Selecciona la mejor acción usando Expectimax.
-
-        Parámetros
-        ----------
-        obs : Board
-            Estado actual del tablero.
-
-        Devuelve
-        --------
-        best_action : tuple | None
-            La mejor acción según Expectimax, o None si no hay movimientos.
-        """
         self._nodes_expanded = 0
         best_action = None
         best_value = -INF
@@ -69,11 +45,9 @@ class ExpectimaxAgent(Agent):
         return best_action
 
     def heuristic_utility(self, board: Board) -> float:
-        """Interfaz requerida por la clase abstracta Agent."""
         return self.heuristic(board, self.player)
 
     def _max_value(self, board: Board, depth: int) -> float:
-        """Nodo Max: el agente elige la acción que maximiza la utilidad."""
         self._nodes_expanded += 1
         is_end, winner = board.is_end(self.player)
 
@@ -92,10 +66,8 @@ class ExpectimaxAgent(Agent):
         return value
 
     def _chance_value(self, board: Board, depth: int) -> float:
-        """
-        Nodo Chance: el oponente elige una acción con distribución uniforme.
-        Devuelve la esperanza del valor sobre todas las acciones posibles.
-        """
+        # nodo de azar: promedia el valor sobre todas las jugadas del rival,
+        # asumiendo que elige cada una con la misma probabilidad
         self._nodes_expanded += 1
         opponent = self.player % 2 + 1
         is_end, winner = board.is_end(opponent)
@@ -109,9 +81,8 @@ class ExpectimaxAgent(Agent):
         possible_actions = board.get_possible_actions(opponent)
 
         if not possible_actions:
-            return INF  # Oponente sin movimientos → ganamos
+            return INF  # el rival se quedó sin movimientos, ganamos
 
-        # Distribución uniforme sobre las acciones del oponente
         prob = 1.0 / len(possible_actions)
         expected_value = 0.0
 

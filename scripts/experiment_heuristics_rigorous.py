@@ -55,7 +55,7 @@ except Exception:
 OUT_DIR = Path(__file__).parent.parent / "models" / "mate"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# ── Constantes ────────────────────────────────────────────────────────────
+# Constantes
 HEURISTICS_RR = {
     "mob_only":        eval_mobility_only,
     "mob_center":      eval_mobility_center,
@@ -70,7 +70,7 @@ N_STRATAGEM = 300   # partidas vs Stratagem
 ALPHA       = 0.05  # nivel de significancia global
 DEPTH_RR    = 3     # profundidad para el round-robin
 
-# ── Utilidades estadísticas ───────────────────────────────────────────────
+# Utilidades estadísticas
 
 def normal_cdf(z: float) -> float:
     """CDF de la distribución normal estándar usando math.erfc."""
@@ -105,7 +105,7 @@ def wilson_ci(wins: int, n: int, confidence: float = 0.95) -> tuple[float, float
     return (max(0.0, center - margin), min(1.0, center + margin))
 
 
-# ── Motor de torneos ───────────────────────────────────────────────────────
+# Motor de torneos
 
 def play_one_game(factory1, factory2) -> int:
     """
@@ -180,7 +180,7 @@ def expectimax_factory(heuristic_fn, depth: int):
     )
 
 
-# ── Fase 1: Round-Robin ────────────────────────────────────────────────────
+# Fase 1: Round-Robin
 
 def phase1_roundrobin():
     names = list(HEURISTICS_RR.keys())
@@ -285,7 +285,7 @@ def phase1_roundrobin():
     return summary_rows, any_significant
 
 
-# ── Fase 2: Sweep profundidad × heurística ────────────────────────────────
+# Fase 2: Sweep profundidad × heurística
 
 def phase2_depth_sweep(rr_summary: list):
     """
@@ -342,7 +342,7 @@ def phase2_depth_sweep(rr_summary: list):
     return depth_rows
 
 
-# ── Fase 3: Minimax vs Expectimax ─────────────────────────────────────────
+# Fase 3: Minimax vs Expectimax
 
 def phase3_minimax_vs_expectimax():
     print(f"\n{'='*65}")
@@ -387,7 +387,7 @@ def phase3_minimax_vs_expectimax():
     return rows
 
 
-# ── Fase 4: Mejor agente vs Stratagem ─────────────────────────────────────
+# Fase 4: Mejor agente vs Stratagem
 
 def phase4_vs_stratagem(rr_summary: list, depth_rows: list):
     if not HAS_STRATAGEM:
@@ -438,7 +438,7 @@ def phase4_vs_stratagem(rr_summary: list, depth_rows: list):
     return rows
 
 
-# ── CSV helper ─────────────────────────────────────────────────────────────
+# CSV helper
 
 def _write_csv(rows: list, path: Path):
     if not rows:
@@ -450,7 +450,7 @@ def _write_csv(rows: list, path: Path):
     print(f"  → Guardado: {path.name}")
 
 
-# ── Main ───────────────────────────────────────────────────────────────────
+# Main
 
 def main():
     t_global = time.time()

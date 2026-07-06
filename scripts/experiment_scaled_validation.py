@@ -65,7 +65,7 @@ try:
 except Exception as e:
     log(f"Fase4 ERROR {e}")
 
-# ---- FASE 3 custom: MM vs EX ampliado ----
+# FASE 3 custom: MM vs EX ampliado
 log("=== FASE 3: MM vs EX (ampliado) ===")
 try:
     mvx = []
@@ -86,7 +86,7 @@ try:
 except Exception as e:
     log(f"Fase3 ERROR {e}")
 
-# ---- FASE 4b: otros agentes vs Stratagem ----
+# FASE 4b: otros agentes vs Stratagem
 log("=== FASE 4b: EX y territory vs Stratagem 300 ===")
 try:
     strat = lambda p: Stratagem(p)
@@ -105,7 +105,7 @@ try:
 except Exception as e:
     log(f"Fase4b ERROR {e}")
 
-# ---- FASE 5: depth 5/6 ----
+# FASE 5: depth 5/6
 log("=== FASE 5: depth 5/6 exploracion ===")
 try:
     strat = lambda p: Stratagem(p)
@@ -124,7 +124,7 @@ try:
 except Exception as e:
     log(f"Fase5 ERROR {e}")
 
-# ---- FASE 6: Dyna-Q multi-seed (FINAL config 20x20x15) ----
+# FASE 6: Dyna-Q multi-seed (FINAL config 20x20x15)
 log("=== FASE 6: Dyna-Q multi-seed ===")
 try:
     def train_dyna(seed, q_init, episodes, n_plan=10):
@@ -148,7 +148,7 @@ try:
 except Exception as e:
     log(f"Fase6 ERROR {e}")
 
-# ---- FASE 7: Dyna planning sweep multi-seed (el punto debil) ----
+# FASE 7: Dyna planning sweep multi-seed (el punto debil)
 log("=== FASE 7: Dyna planning sweep multi-seed (q_init=1) ===")
 try:
     def train_dyna_n(seed, n_plan, q_init=1.0, episodes=5000):

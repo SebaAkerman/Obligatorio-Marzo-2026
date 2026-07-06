@@ -98,7 +98,7 @@ df.to_csv(str(MODELS / "ab_impact_results.csv"), index=False)
 print("\n\n=== TABLA COMPLETA ===")
 print(df[["depth","label","avg_nodes","avg_time_s","win_rate"]].to_string(index=False))
 
-# ---------- Figura ----------
+# Figura
 fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 colors = {"Pure Minimax": "#e74c3c", "AB Pruning": "#3498db", "AB + Move Ordering": "#2ecc71"}
 markers = {"Pure Minimax": "o", "AB Pruning": "s", "AB + Move Ordering": "^"}
@@ -132,7 +132,7 @@ plt.tight_layout()
 fig.savefig(str(FIGURES / "ab_impact.png"), dpi=150, bbox_inches="tight")
 print(f"\nFigura guardada: reports/figures/ab_impact.png")
 
-# ---------- Tabla de reducción ----------
+# Tabla de reducción
 print("\n=== TABLA: REDUCCIÓN DE NODOS vs PURE MINIMAX ===")
 for depth in DEPTHS:
     base = df[(df["depth"] == depth) & (df["label"] == "Pure Minimax")]["avg_nodes"].values[0]

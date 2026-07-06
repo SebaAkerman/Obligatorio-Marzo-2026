@@ -10,23 +10,9 @@ INF = math.inf
 
 
 class MinimaxAgent(Agent):
-    """
-    Agente que decide usando Minimax con Alpha-Beta Pruning.
-
-    Parámetros
-    ----------
-    player : int
-        Número de jugador (1 o 2).
-    max_depth : int
-        Profundidad máxima del árbol de búsqueda.
-    heuristic : Callable
-        Función de evaluación h(board, player) → float.
-    use_alpha_beta : bool
-        Si True, activa Alpha-Beta Pruning. Si False, Minimax puro.
-    use_move_ordering : bool
-        Si True, ordena las acciones por valor heurístico antes de expandir.
-        Mejora significativamente la eficiencia de la poda Alpha-Beta.
-    """
+    # Minimax con poda alpha-beta opcional y ordenamiento de movimientos opcional.
+    # use_move_ordering ordena las jugadas por heurística antes de expandir,
+    # lo que ayuda bastante a que la poda corte antes.
 
     def __init__(
         self,
@@ -44,20 +30,7 @@ class MinimaxAgent(Agent):
         self._nodes_expanded = 0
 
     def next_action(self, obs: Board):
-        """
-        Selecciona la mejor acción usando Minimax (con o sin Alpha-Beta).
-
-        Parámetros
-        ----------
-        obs : Board
-            Estado actual del tablero.
-
-        Devuelve
-        --------
-        best_action : tuple
-            La acción (dirección, celda_a_destruir) óptima según Minimax.
-        """
-        self._nodes_expanded = 1  # nodo raíz
+        self._nodes_expanded = 1
         best_action = None
         best_value = -INF
         alpha = -INF
@@ -65,7 +38,7 @@ class MinimaxAgent(Agent):
         possible_actions = self._ordered_actions(obs, self.player, maximize=True)
 
         if not possible_actions:
-            return None  # sin movimientos → perdimos
+            return None
 
         for action in possible_actions:
             next_board = obs.clone()
@@ -86,14 +59,9 @@ class MinimaxAgent(Agent):
         return best_action
 
     def heuristic_utility(self, board: Board) -> float:
-        """Interfaz requerida por la clase abstracta Agent."""
         return self.heuristic(board, self.player)
 
     def _ordered_actions(self, board: Board, player: int, maximize: bool = True) -> list:
-        """
-        Devuelve las acciones ordenadas por valor heurístico.
-        Si use_move_ordering=False, devuelve el orden original.
-        """
         actions = board.get_possible_actions(player)
         if not self.use_move_ordering or len(actions) <= 1:
             return actions
@@ -109,7 +77,6 @@ class MinimaxAgent(Agent):
         return [a for _, a in scored]
 
     def _max_value(self, board: Board, depth: int, alpha: float, beta: float) -> float:
-        """Nodo Max en el árbol Minimax."""
         self._nodes_expanded += 1
         is_end, winner = board.is_end(self.player)
 
@@ -125,13 +92,12 @@ class MinimaxAgent(Agent):
             child.play(action, self.player)
             value = max(value, self._min_value(child, depth + 1, alpha, beta))
             if value >= beta:
-                return value  # poda β
+                return value  # poda beta
             alpha = max(alpha, value)
 
         return value
 
     def _min_value(self, board: Board, depth: int, alpha: float, beta: float) -> float:
-        """Nodo Min en el árbol Minimax."""
         self._nodes_expanded += 1
         opponent = self.player % 2 + 1
         is_end, winner = board.is_end(opponent)
@@ -148,7 +114,7 @@ class MinimaxAgent(Agent):
             child.play(action, opponent)
             value = min(value, self._max_value(child, depth + 1, alpha, beta))
             if value <= alpha:
-                return value  # poda α
+                return value  # poda alfa
             beta = min(beta, value)
 
         return value

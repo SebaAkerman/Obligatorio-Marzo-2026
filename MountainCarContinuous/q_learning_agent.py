@@ -10,21 +10,9 @@ from utils.discretization import Discretizer
 
 
 class QLearningAgent:
-    """
-    Agente Q-Learning tabular con política ε-greedy.
-
-    El Discretizer se construye internamente a partir de los parámetros
-    de bins y acciones, permitiendo explorar distintas granularidades.
-
-    Parámetros de __init__
-    ----------------------
-    n_pos_bins : int
-        Número de bins para discretizar la posición x.
-    n_vel_bins : int
-        Número de bins para discretizar la velocidad.
-    n_actions : int
-        Número de acciones discretas uniformes en [-1, 1].
-    """
+    # Q-Learning tabular con política epsilon-greedy. El Discretizer se arma
+    # internamente a partir de los bins/acciones para poder probar distintas
+    # granularidades sin tocar el resto del agente.
 
     def __init__(
         self,
@@ -40,31 +28,17 @@ class QLearningAgent:
         )
 
         self.q_init = q_init
-        # Tabla Q — q_init>0 aplica inicialización optimista (favorece exploración)
+        # q_init > 0 es inicialización optimista, ayuda a explorar al principio
         self.Q = np.full((*self.disc.state_shape, self.disc.n_actions), q_init)
 
-        # Hiperparámetros — se setean en train_agent
+        # se pisan en train_agent
         self.alpha: float = 0.1
         self.gamma: float = 0.99
         self.epsilon: float = 1.0
 
-        # Historial de entrenamiento (para gráficos e informe)
         self.training_rewards: list[float] = []
 
     def next_action(self, obs: np.ndarray) -> np.ndarray:
-        """
-        Selecciona una acción con política ε-greedy usando self.epsilon actual.
-
-        Parámetros
-        ----------
-        obs : np.ndarray
-            Observación continua del ambiente [posición, velocidad].
-
-        Devuelve
-        --------
-        np.ndarray
-            Acción continua lista para pasar a env.step().
-        """
         state = self.disc.obs_to_state(obs)
 
         if random.random() < self.epsilon:
@@ -75,7 +49,7 @@ class QLearningAgent:
         return self.disc.action_index_to_continuous(action_idx)
 
     def _action_index(self, obs: np.ndarray) -> int:
-        """Como next_action pero devuelve el índice (necesario para actualizar Q)."""
+        """Igual que next_action pero devuelve el índice, para poder actualizar Q."""
         state = self.disc.obs_to_state(obs)
         if random.random() < self.epsilon:
             return self.disc.sample_action_index()
@@ -109,30 +83,6 @@ class QLearningAgent:
         verbose: bool = True,
         log_every: int = 200,
     ) -> list[float]:
-        """
-        Entrena el agente con Q-Learning durante `episodes` episodios.
-
-        Parámetros conocidos
-        ------------------------
-        env      : ambiente Gymnasium.
-        episodes : número de episodios de entrenamiento.
-        epsilon  : probabilidad inicial de exploración (ε-greedy).
-        gamma    : factor de descuento γ.
-        alpha    : tasa de aprendizaje α.
-
-        Parámetros adicionales (exploración de hiperparámetros)
-        --------------------------------------------------------
-        epsilon_decay : factor multiplicativo de decaimiento de ε por episodio.
-        epsilon_min   : valor mínimo de ε.
-        max_steps     : pasos máximos por episodio.
-        verbose       : imprimir progreso.
-        log_every     : frecuencia de logs.
-
-        Devuelve
-        --------
-        list[float]
-            Recompensa total por episodio (para graficar y reportar).
-        """
         self.alpha = alpha
         self.gamma = gamma
         self.epsilon = epsilon
@@ -156,7 +106,6 @@ class QLearningAgent:
                 if done:
                     break
 
-            # Decaimiento de ε
             self.epsilon = max(epsilon_min, self.epsilon * epsilon_decay)
             self.training_rewards.append(total_reward)
 
@@ -178,20 +127,9 @@ class QLearningAgent:
         max_steps: int = 999,
         render: bool = False,
     ) -> dict[str, float]:
-        """
-        Evalúa el agente entrenado con política greedy pura (ε = 0).
-
-        Parámetros
-        ----------
-        env      : ambiente Gymnasium.
-        episodes : número de episodios de evaluación.
-
-        Devuelve
-        --------
-        dict con mean_reward, std_reward y success_rate.
-        """
+        """Evalúa con política greedy pura (epsilon = 0)."""
         saved_epsilon = self.epsilon
-        self.epsilon = 0.0  # greedy pura durante test
+        self.epsilon = 0.0
 
         rewards = []
         successes = 0
@@ -216,7 +154,7 @@ class QLearningAgent:
 
             rewards.append(total_reward)
 
-        self.epsilon = saved_epsilon  # restaurar ε
+        self.epsilon = saved_epsilon
 
         results = {
             "mean_reward": float(np.mean(rewards)),
@@ -231,7 +169,6 @@ class QLearningAgent:
         return results
 
     def save(self, path: str) -> None:
-        """Guarda el modelo entrenado en formato .pkl."""
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         with open(path, "wb") as f:
             pickle.dump(
@@ -250,7 +187,6 @@ class QLearningAgent:
 
     @classmethod
     def load(cls, path: str) -> "QLearningAgent":
-        """Carga un modelo previamente guardado."""
         with open(path, "rb") as f:
             data = pickle.load(f)
         disc: Discretizer = data["disc"]

@@ -54,7 +54,7 @@ STYLE = {
     "strat":  "#6A1B9A",   # violeta — vs Stratagem
 }
 
-# ── Utilidades ─────────────────────────────────────────────────────────────
+# Utilidades
 
 def read_csv(path):
     with open(path) as f:
@@ -115,7 +115,7 @@ def mm_final():
     return lambda p: MinimaxAgent(p, max_depth=5,
                                   heuristic=eval_mobility_only, use_alpha_beta=True)
 
-# ── Experimentos adicionales ───────────────────────────────────────────────
+# Experimentos adicionales
 
 def run_extra_experiments():
     print("\n" + "="*60)
@@ -188,7 +188,7 @@ def run_extra_experiments():
     print(f"\n  → Guardado: {out.name}")
     return extra_rows
 
-# ── Figura 1: Depth Sweep ──────────────────────────────────────────────────
+# Figura 1: Depth Sweep
 
 def fig_depth_sweep():
     rows = read_csv(MODELS / "rigorous_depth_sweep.csv")
@@ -257,7 +257,7 @@ def fig_depth_sweep():
     plt.close()
     print(f"  → {out.name}")
 
-# ── Figura 2: Round-Robin ──────────────────────────────────────────────────
+# Figura 2: Round-Robin
 
 def fig_roundrobin():
     summary = read_csv(MODELS / "rigorous_summary.csv")
@@ -338,7 +338,7 @@ def fig_roundrobin():
     plt.close()
     print(f"  → {out.name}")
 
-# ── Figura 3: Minimax vs Expectimax ───────────────────────────────────────
+# Figura 3: Minimax vs Expectimax
 
 def fig_minimax_vs_exp():
     rows = read_csv(MODELS / "rigorous_minimax_vs_exp.csv")
@@ -398,7 +398,7 @@ def fig_minimax_vs_exp():
     plt.close()
     print(f"  → {out.name}")
 
-# ── Figura 4: vs Stratagem ────────────────────────────────────────────────
+# Figura 4: vs Stratagem
 
 def fig_vs_stratagem(extra_rows=None):
     strat = read_csv(MODELS / "rigorous_vs_stratagem.csv")[0]
@@ -450,7 +450,7 @@ def fig_vs_stratagem(extra_rows=None):
     plt.close()
     print(f"  → {out.name}")
 
-# ── Figura 5: Resumen ejecutivo (tabla visual) ─────────────────────────────
+# Figura 5: Resumen ejecutivo (tabla visual)
 
 def fig_summary(extra_rows=None):
     """Un único gráfico de resumen que muestra los hallazgos principales de MATE."""
@@ -576,7 +576,7 @@ def fig_summary(extra_rows=None):
     print(f"  → {out.name}")
 
 
-# ── Main ───────────────────────────────────────────────────────────────────
+# Main
 
 def main():
     print("="*60)

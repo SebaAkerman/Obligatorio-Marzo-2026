@@ -94,7 +94,7 @@ df_points.to_csv(str(MODELS / "roundrobin_results.csv"))
 print("\n=== ROUND-ROBIN FINAL STANDINGS ===")
 print(df_points[["total_wins","total_games","win_rate","ci95"]].to_string())
 
-# ---------- Heatmap ----------
+# Heatmap
 # Win rate de fila vs columna
 rate_matrix = np.zeros((n, n))
 for i in range(n):
@@ -122,7 +122,7 @@ plt.tight_layout()
 fig.savefig(str(FIGURES / "heuristic_roundrobin_full.png"), dpi=150, bbox_inches="tight")
 print(f"\nFigura: reports/figures/heuristic_roundrobin_full.png")
 
-# ---------- Bar chart de standings ----------
+# Bar chart de standings
 fig2, ax2 = plt.subplots(figsize=(10, 5))
 colors_bar = ["#2ecc71" if i == 0 else "#3498db" if i < 3 else "#e74c3c"
               for i in range(len(df_points))]

@@ -90,7 +90,7 @@ df.to_csv(str(MODELS / "dyna_planning_sweep.csv"), index=False)
 print("\n=== TABLA RESUMEN ===")
 print(df.to_string(index=False))
 
-# ---------- Figura 1: Curvas de aprendizaje ----------
+# Figura 1: Curvas de aprendizaje
 fig, axes = plt.subplots(1, 2, figsize=(16, 5))
 
 WINDOW = 50
@@ -109,7 +109,7 @@ axes[0].set_title("Dyna-Q: Impacto de n_planning en Aprendizaje")
 axes[0].legend(fontsize=9)
 axes[0].grid(alpha=0.3)
 
-# ---------- Figura 2: Métricas finales vs n ----------
+# Figura 2: Métricas finales vs n
 ax2 = axes[1]
 ax2_r = ax2.twinx()
 
