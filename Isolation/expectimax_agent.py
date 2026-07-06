@@ -10,7 +10,7 @@ INF = math.inf
 
 
 class ExpectimaxAgent(Agent):
-    # asume que el rival juega al azar (uniforme) en vez de jugar óptimo como en minimax
+    # asume rival aleatorio, a diferencia de minimax
 
     def __init__(
         self,
@@ -66,8 +66,7 @@ class ExpectimaxAgent(Agent):
         return value
 
     def _chance_value(self, board: Board, depth: int) -> float:
-        # nodo de azar: promedia el valor sobre todas las jugadas del rival,
-        # asumiendo que elige cada una con la misma probabilidad
+        # promedia sobre las jugadas del rival (distribución uniforme)
         self._nodes_expanded += 1
         opponent = self.player % 2 + 1
         is_end, winner = board.is_end(opponent)

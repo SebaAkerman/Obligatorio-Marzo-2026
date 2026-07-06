@@ -1457,7 +1457,7 @@
     "---\n",
     "## Sección 6. Experimento Riguroso — Validación Estadística de Heurísticas\n",
     "\n",
-    "**Diseño experimental (marco teórico: Russell & Norvig cap. 5):**\n",
+    "**Diseño experimental:**\n",
     "- Round-robin completo: C(5,2)=10 pares × **100 partidas balanceadas** (50 P1 + 50 P2)\n",
     "- Test binomial de dos colas por par: H₀: win_rate = 0.5\n",
     "- Corrección de Bonferroni: α_adj = 0.05 / 10 = **0.005**\n",

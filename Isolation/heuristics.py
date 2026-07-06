@@ -10,8 +10,7 @@ def h_mobility(board: Board, player: int) -> float:
 
 
 def h_open_cells(board: Board, player: int) -> float:
-    # mismo criterio que h_mobility pero normalizado a [-1, 1], para que no
-    # dependa tanto de cuántas celdas libres queden en el tablero
+    # h_mobility normalizada a [-1, 1]
     opponent = player % 2 + 1
     my_actions = len(board.get_possible_actions(player))
     opp_actions = len(board.get_possible_actions(opponent))
@@ -22,8 +21,6 @@ def h_open_cells(board: Board, player: int) -> float:
 
 
 def h_center_proximity(board: Board, player: int) -> float:
-    # estar cerca del centro suele dar más opciones de movimiento, así que
-    # comparamos distancia Manhattan al centro contra la del rival
     opponent = player % 2 + 1
     pos_player = board.find_player_position(player)
     pos_opp = board.find_player_position(opponent)
@@ -42,7 +39,6 @@ def h_center_proximity(board: Board, player: int) -> float:
 
 
 def h_aggressive(board: Board, player: int) -> float:
-    # ignora al rival, solo mira la movilidad propia
     my_moves = len(board.get_possible_actions(player))
     return float(my_moves)
 
@@ -62,7 +58,6 @@ def eval_full(
     w_center: float = 0.2,
     w_space: float = 0.2,
 ) -> float:
-    # heurística principal, combina movilidad + centro + espacio libre
     mob = h_mobility(board, player)
     cen = h_center_proximity(board, player)
     space = h_open_cells(board, player)
@@ -70,9 +65,7 @@ def eval_full(
 
 
 def h_future_mobility(board: Board, player: int) -> float:
-    # mira un paso adelante: promedio de movimientos que quedan disponibles
-    # después de cada jugada posible propia/rival. Más informativa que
-    # h_mobility pero bastante más lenta (clona y juega cada acción)
+    # promedio de movimientos disponibles un paso adelante
     opponent = player % 2 + 1
 
     my_actions = board.get_possible_actions(player)
@@ -103,8 +96,7 @@ def eval_future_mobility_only(board: Board, player: int) -> float:
 
 
 def h_territory(board: Board, player: int) -> float:
-    # BFS desde cada jugador para contar celdas vacías alcanzables. Captura
-    # control de territorio y no solo movilidad inmediata, pero es O(n^2)
+    # BFS para contar celdas vacías alcanzables desde cada jugador
     from collections import deque
 
     def bfs_area(start_pos, grid, board_size):

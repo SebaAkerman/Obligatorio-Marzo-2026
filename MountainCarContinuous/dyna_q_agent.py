@@ -9,8 +9,7 @@ from utils.discretization import Discretizer
 
 
 class DynaQAgent:
-    # Dyna-Q tabular. Sigue la misma interfaz que QLearningAgent
-    # (train_agent / test_agent / next_action) para poder compararlos directo.
+    # misma interfaz que QLearningAgent para poder compararlos directo
 
     def __init__(
         self,

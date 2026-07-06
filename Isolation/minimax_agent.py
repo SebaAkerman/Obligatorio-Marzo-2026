@@ -10,9 +10,7 @@ INF = math.inf
 
 
 class MinimaxAgent(Agent):
-    # Minimax con poda alpha-beta opcional y ordenamiento de movimientos opcional.
-    # use_move_ordering ordena las jugadas por heurística antes de expandir,
-    # lo que ayuda bastante a que la poda corte antes.
+    # use_move_ordering ordena las jugadas por heurística antes de expandir, ayuda a la poda
 
     def __init__(
         self,

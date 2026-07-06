@@ -14,9 +14,6 @@ Fases:
   3. Minimax vs Expectimax (100 partidas balanceadas)
   4. Mejor agente vs Stratagem (referencia de la cátedra)
 
-Referencia: Russell & Norvig (2020) cap. 5 - Adversarial Search and Games
-            Sutton & Barto (2020) - metodología experimental en IA
-
 Ejecución (desde Isolation/):
     python ../scripts/experiment_heuristics_rigorous.py
 

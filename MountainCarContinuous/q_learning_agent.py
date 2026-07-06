@@ -10,9 +10,7 @@ from utils.discretization import Discretizer
 
 
 class QLearningAgent:
-    # Q-Learning tabular con política epsilon-greedy. El Discretizer se arma
-    # internamente a partir de los bins/acciones para poder probar distintas
-    # granularidades sin tocar el resto del agente.
+    # Q-Learning tabular con política epsilon-greedy
 
     def __init__(
         self,
