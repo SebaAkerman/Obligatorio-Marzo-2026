@@ -1,15 +1,3 @@
-"""
-Experimento: Round-Robin completo de heurísticas en Isolation.
-
-Enfrenta TODAS las heurísticas entre sí (round-robin) para determinar
-cuál es la más fuerte. Incluye h_territory (BFS) y h_future_mobility.
-
-Métricas: puntos totales en round-robin, IC 95%, win rate vs cada oponente.
-
-Uso (desde Isolation/):
-    poetry run python ../scripts/experiment_heuristics_roundrobin.py
-"""
-
 import sys, os
 from pathlib import Path
 
